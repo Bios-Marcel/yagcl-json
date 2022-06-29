@@ -1,0 +1,25 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        platform: [windows-latest, ubuntu-latest, macos-latest]
+        go: ['1.18.x']
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Run tests
+        shell: bash
+        run: |
+          go test -race -covermode=atomic -v ./...
