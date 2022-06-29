@@ -19,10 +19,6 @@ func Source(path string) *JSONSource {
 	return &JSONSource{path: path}
 }
 
-func OOF() {
-	//OOF
-}
-
 // Must indicates that this Source will return an error during parsing if no
 // parsable data can be found.
 func (s *JSONSource) Must() *JSONSource {
@@ -48,5 +44,5 @@ func (s *JSONSource) Parse(configurationStruct any) (bool, error) {
 	err := json.
 		NewDecoder(file).
 		Decode(configurationStruct)
-	return err != nil, err
+	return err == nil, err
 }
