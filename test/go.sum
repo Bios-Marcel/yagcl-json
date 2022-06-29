@@ -1,5 +1,7 @@
-github.com/Bios-Marcel/yagcl v0.0.0-20220629111241-e7cd1cc91730 h1:rnsWCudqCD6rMuFsuIdQFkAVk7LfIl9j8KcgYF+oex0=
-github.com/Bios-Marcel/yagcl v0.0.0-20220629111241-e7cd1cc91730/go.mod h1:m+2/+LJJCsfMHIu7+Q8YllH86A4deDGs49njfIvcqos=
+github.com/Bios-Marcel/yagcl v0.0.2 h1:lnHIw2XKliCOuvPJVIKZRlv4PELl3iVDKf9/1zls9n4=
+github.com/Bios-Marcel/yagcl v0.0.2/go.mod h1:m+2/+LJJCsfMHIu7+Q8YllH86A4deDGs49njfIvcqos=
+github.com/Bios-Marcel/yagcl-json v0.0.0-20220629120639-623683829308 h1:MS+gnhLW4b8b5KhVXLG9LgUKiinrVlC5O90JheoIQ8o=
+github.com/Bios-Marcel/yagcl-json v0.0.0-20220629120639-623683829308/go.mod h1:yK6XiEq8xNVHyO94IkgWm7Q2D0hCt3nfEIs30S1pYNY=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

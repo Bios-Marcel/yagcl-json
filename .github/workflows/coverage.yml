@@ -22,7 +22,7 @@ jobs:
       - name: Run tests and write coverprofile
         shell: bash
         run: |
-          go test -coverprofile=profile.out -race -covermode=atomic -v ./...
+          go test -v -race -covermode=atomic -coverprofile=profile.out -coverpkg ./ ./test
 
       - name: Upload testcoverage to codecov.io
         uses: codecov/codecov-action@v1

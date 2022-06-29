@@ -22,4 +22,4 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          go test -race -covermode=atomic -v ./...
+          go test -v -race -covermode=atomic -coverpkg ./ ./test
