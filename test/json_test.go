@@ -1,6 +1,7 @@
 package json
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/Bios-Marcel/yagcl"
@@ -10,6 +11,44 @@ import (
 
 func Test_JSONSource_InterfaceCompliance(t *testing.T) {
 	var _ yagcl.Source = json.Source().Path("irrelevant.json")
+}
+
+func Test_JSONSource_ErrNoSource(t *testing.T) {
+	source, ok := json.Source().(yagcl.Source)
+	if assert.True(t, ok) {
+		loaded, err := source.Parse(nil)
+		assert.False(t, loaded)
+		assert.ErrorIs(t, err, json.ErrNoDataSourceSpecified)
+	}
+}
+
+func Test_JSONSource_MultipleSources(t *testing.T) {
+	stepOne := json.Source()
+	stepOne.Bytes([]byte{1})
+	stepOne.Path("irrelevant.json")
+	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
+		loaded, err := source.Parse(nil)
+		assert.False(t, loaded)
+		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
+	}
+
+	stepOne = json.Source()
+	stepOne.Reader(bytes.NewReader([]byte{1}))
+	stepOne.Path("irrelevant.json")
+	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
+		loaded, err := source.Parse(nil)
+		assert.False(t, loaded)
+		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
+	}
+
+	stepOne = json.Source()
+	stepOne.Reader(bytes.NewReader([]byte{1}))
+	stepOne.Bytes([]byte{1})
+	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
+		loaded, err := source.Parse(nil)
+		assert.False(t, loaded)
+		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
+	}
 }
 
 func Test_Parse_JSON_Simple(t *testing.T) {
