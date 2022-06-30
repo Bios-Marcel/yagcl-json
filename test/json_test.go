@@ -9,7 +9,7 @@ import (
 )
 
 func Test_JSONSource_InterfaceCompliance(t *testing.T) {
-	var _ yagcl.Source = json.Source("")
+	var _ yagcl.Source = json.Source().Path("irrelevant.json")
 }
 
 func Test_Parse_JSON_Simple(t *testing.T) {
@@ -20,7 +20,7 @@ func Test_Parse_JSON_Simple(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(json.Source("./test.json").Must()).
+		Add(json.Source().Path("./test.json").Must()).
 		Parse(&c)
 	assert.NoError(t, err)
 	//Not yet implemented
