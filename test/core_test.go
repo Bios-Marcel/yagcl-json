@@ -1,4 +1,4 @@
-package json
+package test
 
 import (
 	"bytes"
@@ -51,18 +51,69 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 	}
 }
 
-func Test_Parse_JSON_Simple(t *testing.T) {
+func Test_Parse_KeyTags(t *testing.T) {
 	type configuration struct {
-		//Not yet implemented
-		//FieldA string `key:"field_a"`
+		FieldA string `key:"field_a"`
 		FieldB string `json:"field_b"`
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(json.Source().Path("./test.json").Must()).
+		Add(json.Source().
+			Bytes([]byte(`{
+				"field_a": "content a",
+				"field_b": "content b"
+			}`))).
 		Parse(&c)
-	assert.NoError(t, err)
-	//Not yet implemented
-	//assert.Equal(t, "content a", c.FieldA)
-	assert.Equal(t, "content b", c.FieldB)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content a", c.FieldA)
+		assert.Equal(t, "content b", c.FieldB)
+	}
 }
+
+func Test_Parse_MissingFieldKey(t *testing.T) {
+	type configuration struct {
+		FieldA string
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().Bytes([]byte(`{"field_a": "content a"}`))).
+		Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrExportedFieldMissingKey)
+}
+
+func Test_Parse_IgnoreField(t *testing.T) {
+	type configuration struct {
+		FieldA string `ignore:"true"`
+		FieldB string `key:"field_b" ignore:"true"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().
+			Bytes([]byte(`{
+				"field_a": "content a",
+				"field_b": "content b"
+			}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Empty(t, c.FieldA)
+	}
+}
+
+func Test_Parse_UnexportedFieldsIgnored(t *testing.T) {
+	type configuration struct {
+		fieldA string `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().Bytes([]byte(`{"field_a": "content a"}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Empty(t, c.fieldA)
+	}
+}
+
+//FIXME Does it support comments?
+//FIXME Does it support trailing commas?
