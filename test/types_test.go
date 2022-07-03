@@ -236,9 +236,6 @@ func Test_Parse_SinglePointerToStruct_Invalid(t *testing.T) {
 }
 
 func Test_Parse_Struct_Invalid(t *testing.T) {
-	//FIXME
-	t.SkipNow()
-
 	type substruct struct {
 		FieldC int `key:"field_c"`
 	}
