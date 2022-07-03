@@ -73,7 +73,16 @@ func Test_Parse_PathSource_NotFound(t *testing.T) {
 	err := yagcl.New[configuration]().Add(json.Source().Path("./doesntexist.json").Must()).Parse(&c)
 	assert.ErrorIs(t, err, yagcl.ErrSourceNotFound)
 	err = yagcl.New[configuration]().Add(json.Source().Path("./doesntexist.json")).Parse(&c)
-	assert.NoError(t, err, yagcl.ErrSourceNotFound)
+	assert.NoError(t, err)
+}
+
+func Test_Parse_PathSource_Dir(t *testing.T) {
+	type configuration struct{}
+	var c configuration
+	err := yagcl.New[configuration]().Add(json.Source().Path("./").Must()).Parse(&c)
+	assert.Error(t, err)
+	err = yagcl.New[configuration]().Add(json.Source().Path("./")).Parse(&c)
+	assert.Error(t, err)
 }
 
 func Test_Parse_ReaderSource(t *testing.T) {
