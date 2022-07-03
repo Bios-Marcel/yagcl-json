@@ -227,3 +227,50 @@ func Test_Parse_Comments(t *testing.T) {
 		assert.Equal(t, "content b", c.FieldB)
 	}
 }
+
+func Test_Parse_JSON5(t *testing.T) {
+	// Simple JSON5 test. Right now this won't pass, but we'll keep it, so we
+	// can check these at any time.
+	t.SkipNow()
+
+	type configuration struct {
+		Unquoted            string   `key:"unquoted"`
+		SingleQuotes        string   `key:"singleQuotes"`
+		LineBreaks          string   `key:"lineBreaks"`
+		Hexadecimal         string   `key:"hexadecimal"`
+		LeadingDecimalPoint float64  `key:"leadingDecimalPoint"`
+		AndTrailing         float64  `key:"andTrailing"`
+		PositiveSign        int      `key:"positiveSign"`
+		TrailingComma       string   `key:"trailingComma"`
+		AndIn               []string `key:"andIn"`
+		BackwardsCompatible string   `key:"backwardsCompatible"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().Bytes([]byte(`{
+			// comments
+			unquoted: 'and you can quote me on that',
+			singleQuotes: 'I can use "double quotes" here',
+			lineBreaks: "Look, Mom! \
+		  No \\n's!",
+			hexadecimal: 0xdecaf,
+			leadingDecimalPoint: .8675309, andTrailing: 8675309.,
+			positiveSign: +1,
+			trailingComma: 'in objects', andIn: ['arrays',],
+			"backwardsCompatible": "with JSON",
+		  }`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "and you can quote me on that", c.Unquoted)
+		assert.Equal(t, `I can use "double quotes" here`, c.SingleQuotes)
+		assert.Equal(t, "Look, Mom! \nNo \\n's!", c.LineBreaks)
+		assert.Equal(t, 0xdecaf, c.Hexadecimal)
+		assert.Equal(t, .8675309, c.LeadingDecimalPoint)
+		assert.Equal(t, 8675309., c.AndTrailing)
+		assert.Equal(t, 1, c.PositiveSign)
+		assert.Equal(t, "in objects", c.TrailingComma)
+		assert.Equal(t, []string{"arrays"}, c.AndIn)
+		assert.Equal(t, "with JSON", c.BackwardsCompatible)
+	}
+}
