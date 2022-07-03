@@ -51,6 +51,18 @@ func Test_Parse_Duration(t *testing.T) {
 	}
 }
 
+func Test_Parse_Duration_Invalid(t *testing.T) {
+	type configuration struct {
+		FieldA time.Duration `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.Source().Bytes([]byte(`{"field_a": "ain't valid"}`))).
+		Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+}
+
 func Test_Parse_JSON_Nested(t *testing.T) {
 	type configuration struct {
 		//Not yet implemented
