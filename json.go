@@ -299,12 +299,13 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 }
 
 func getUnmarshaler(fieldValue reflect.Value) json.Unmarshaler {
+	// Technically this check isn't required, as we already filter out
+	// unexported fields. However, I am unsure whether this behaviour is set
+	// in stone, as it hasn't been documented properly.
+	// https://stackoverflow.com/questions/50279840/when-is-go-reflect-caninterface-false
 	if !fieldValue.CanInterface() {
 		return nil
 	}
-
-	//FIXME Doesn't match yet. Probably have to specifically check the
-	//pointer version of that type.
 
 	// New pointer value, since non-pointers can't implement json.Unmarshaler.
 	if u, ok := reflect.New(fieldValue.Type()).Interface().(json.Unmarshaler); ok {
