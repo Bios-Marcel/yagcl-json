@@ -208,6 +208,46 @@ func Test_Parse_TrailingCommas(t *testing.T) {
 	}
 }
 
+func Test_Parse_TrailingCommas_Array(t *testing.T) {
+	// Sadly this test fails right now, it might be good to try and fix this.
+	t.Skip()
+
+	type configuration struct {
+		FieldA []string `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().Bytes([]byte(`{
+			"field_a": ["content a",]
+		}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, c.FieldA, []string{"content a"})
+	}
+}
+
+func Test_Parse_TrailingCommas_Map(t *testing.T) {
+	// Sadly this test fails right now, it might be good to try and fix this.
+	t.Skip()
+
+	type configuration struct {
+		FieldA map[string]string `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().Bytes([]byte(`{
+			"field_a": {
+				"a": "b",
+			}
+		}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, c.FieldA, map[string]string{"a": "b"})
+	}
+}
+
 func Test_Parse_Comments(t *testing.T) {
 	type configuration struct {
 		FieldA string `key:"field_a"`
