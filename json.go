@@ -162,11 +162,12 @@ func (s *jsonSourceImpl) Parse(configurationStruct any) (bool, error) {
 		return false, err
 	}
 
-	err = s.parse(bytes, []string{}, reflect.Indirect(reflect.ValueOf(configurationStruct)))
+	_, err = s.parse(bytes, nil, reflect.Indirect(reflect.ValueOf(configurationStruct)))
 	return err == nil, err
 }
 
-func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValue reflect.Value) error {
+func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValue reflect.Value) (bool, error) {
+	var hasAnyFieldBeenSet bool
 	structType := structValue.Type()
 	for i := 0; i < structValue.NumField(); i++ {
 		structField := structType.Field(i)
@@ -178,7 +179,7 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 
 		jsonKey, err := s.extractJSONKey(structField)
 		if err != nil {
-			return err
+			return hasAnyFieldBeenSet, err
 		}
 		jsonPath := append(parentJsonPath, jsonKey)
 
@@ -191,24 +192,23 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 				continue
 			}
 
-			return newJsonparserError(jsonPath, err)
+			return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
 		}
 
-		fieldValue := structValue.Field(i)
-		var value any
-		var parsed reflect.Value
 		fieldType := structField.Type
 		for fieldType.Kind() == reflect.Pointer {
 			fieldType = fieldType.Elem()
 		}
 
+		fieldValue := structValue.Field(i)
+		var value any
 		// Types with a custom unmarshaller have to be checked first before
 		// attempting to parse them using default behaviour, as the behaviour
 		// might differ from std/json otherwise.
 		if unmarshallable := getUnmarshaler(fieldValue); unmarshallable != nil {
 			valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
 			if err != nil {
-				return newJsonparserError(jsonPath, err)
+				return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
 			}
 
 			// Since jsonparser strips the quotes from strings, we need to add
@@ -218,7 +218,7 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 			}
 
 			if err = unmarshallable.UnmarshalJSON(valueBytes); err != nil {
-				return newUnmarshalError(jsonPath, err)
+				return hasAnyFieldBeenSet, newUnmarshalError(jsonPath, err)
 			}
 			value = unmarshallable
 		} else {
@@ -226,15 +226,38 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 			case reflect.String:
 				value, err = jsonparser.GetString(bytes, jsonPath...)
 				if err != nil {
-					return newJsonparserError(jsonPath, err)
+					return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
 				}
 			case reflect.Struct:
-				return s.parse(bytes, jsonPath, reflect.Indirect(fieldValue))
+				// We can't operate on any zero value, therefore we create a
+				// temporary value for the struct.
+				var structValue reflect.Value
+				if fieldValue.IsZero() {
+					structValue = reflect.New(fieldType)
+				} else {
+					structValue = fieldValue
+				}
+				structValue = reflect.Indirect(structValue)
+
+				hasAnySubStructFieldBeenSet, err := s.parse(bytes, jsonPath, structValue)
+				hasAnyFieldBeenSet = hasAnyFieldBeenSet || hasAnySubStructFieldBeenSet
+				if err != nil {
+					return hasAnyFieldBeenSet, err
+				}
+
+				// Only if any field of our temporary struct has been set, we
+				// actually use the initialised struct for its parent.
+				// Otherwise we'd initialise struct pointers that don't have a
+				// single field set, losing the information of what values ha
+				// actually been set.
+				if hasAnySubStructFieldBeenSet {
+					value = structValue.Interface()
+				}
 			case reflect.Complex64, reflect.Complex128:
 				{
 					// Complex isn't supported, as for example it also isn't supported
 					// by the stdlib json encoder / decoder.
-					return fmt.Errorf("type '%s' isn't supported and won't ever be: %w", structField.Name, yagcl.ErrUnsupportedFieldType)
+					return hasAnyFieldBeenSet, fmt.Errorf("type '%s' isn't supported and won't ever be: %w", structField.Name, yagcl.ErrUnsupportedFieldType)
 				}
 			case reflect.Int64:
 				{
@@ -246,7 +269,7 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 							var errParse error
 							value, errParse = time.ParseDuration(stringValue)
 							if errParse != nil {
-								return fmt.Errorf("value '%s' isn't parsable as an 'time.Duration' for field '%s': %w", stringValue, structField.Name, yagcl.ErrParseValue)
+								return hasAnyFieldBeenSet, fmt.Errorf("value '%s' isn't parsable as an 'time.Duration' for field '%s': %w", stringValue, structField.Name, yagcl.ErrParseValue)
 							}
 
 							value = reflect.ValueOf(value).Convert(fieldType).Interface()
@@ -267,14 +290,15 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 					value = reflect.New(fieldType).Interface()
 					err = json.Unmarshal(valueBytes, &value)
 					if err != nil {
-						return newUnmarshalError(jsonPath, err)
+						return hasAnyFieldBeenSet, newUnmarshalError(jsonPath, err)
 					}
 				}
 			}
 		}
 
+		hasAnyFieldBeenSet = true
 		// Make sure that we have neither a pointer, not type aliased type that is incorrect.
-		parsed = reflect.Indirect(reflect.ValueOf(value)).Convert(fieldType)
+		parsed := reflect.Indirect(reflect.ValueOf(value)).Convert(fieldType)
 		if fieldValue.Kind() == reflect.Pointer {
 			//Create as many values as we have pointers pointing to things.
 			var pointers []reflect.Value
@@ -295,7 +319,7 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 		}
 	}
 
-	return nil
+	return hasAnyFieldBeenSet, nil
 }
 
 func getUnmarshaler(fieldValue reflect.Value) json.Unmarshaler {

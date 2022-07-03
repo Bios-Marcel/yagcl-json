@@ -210,9 +210,6 @@ func Test_Parse_SinglePointerToStruct(t *testing.T) {
 }
 
 func Test_Parse_SinglePointerToStruct_Invalid(t *testing.T) {
-	//FIXME
-	t.SkipNow()
-
 	type substruct struct {
 		FieldC int `key:"field_c"`
 	}
@@ -259,11 +256,10 @@ func Test_Parse_Struct_Invalid(t *testing.T) {
 }
 
 func Test_Parse_SingleNilPointerToStruct(t *testing.T) {
-	//FIXME
-	t.SkipNow()
-
 	type substruct struct {
-		FieldC string `key:"field_c"`
+		// We use a pointer here to make sure it works with unset non-struct
+		// fields as well.
+		FieldC *int `key:"field_c"`
 	}
 	type configuration struct {
 		FieldA string     `key:"field_a"`
@@ -277,20 +273,30 @@ func Test_Parse_SingleNilPointerToStruct(t *testing.T) {
 			Bytes([]byte(`{
 			"field_a": "content a",
 			"field_b": {
-				"field_c": "content c"
+				"field_c": 1
 			}
 		}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
 		assert.Equal(t, "content a", c.FieldA)
-		assert.Equal(t, "content c", (*c.FieldB).FieldC)
+		assert.Equal(t, 1, *(*c.FieldB).FieldC)
+	}
+
+	c = configuration{}
+	err = yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+			"field_a": "content a",
+		}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content a", c.FieldA)
+		assert.Nil(t, c.FieldB)
 	}
 }
 
 func Test_Parse_PointerOfDoomToStruct(t *testing.T) {
-	//FIXME
-	t.SkipNow()
-
 	type configuration struct {
 		FieldA string `key:"field_a"`
 		FieldB **************struct {
@@ -313,12 +319,22 @@ func Test_Parse_PointerOfDoomToStruct(t *testing.T) {
 		assert.Equal(t, "content a", c.FieldA)
 		assert.Equal(t, "content c", (**************c.FieldB).FieldC)
 	}
+
+	c = configuration{}
+	err = yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+			"field_a": "content a",
+		}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content a", c.FieldA)
+		assert.Nil(t, c.FieldB)
+	}
 }
 
 func Test_Parse_NestedPointerOfDoomToStruct(t *testing.T) {
-	//FIXME
-	t.SkipNow()
-
 	type configuration struct {
 		FieldA string `key:"field_a"`
 		FieldB **************struct {
@@ -351,6 +367,19 @@ func Test_Parse_NestedPointerOfDoomToStruct(t *testing.T) {
 		fieldD := (**************fieldC).FieldD
 		fieldE := (**************fieldD).FieldE
 		assert.Equal(t, "content e", fieldE)
+	}
+
+	c = configuration{}
+	err = yagcl.New[configuration]().Add(yagcl_json.Source().
+		Bytes([]byte(`
+			{
+				"field_a": "content a",
+			}
+		`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content a", c.FieldA)
+		assert.Nil(t, c.FieldB)
 	}
 }
 
