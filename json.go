@@ -255,9 +255,9 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 				{
 					// We are ignoring the error, since we did the same .Get call
 					// earlier already and know it should succeed.
-					bytes, _, _, _ = jsonparser.Get(bytes, jsonPath...)
+					valueBytes, _, _, _ := jsonparser.Get(bytes, jsonPath...)
 					value = reflect.New(fieldType).Interface()
-					err = json.Unmarshal(bytes, &value)
+					err = json.Unmarshal(valueBytes, &value)
 					if err != nil {
 						return newUnmarshalError(jsonPath, err)
 					}

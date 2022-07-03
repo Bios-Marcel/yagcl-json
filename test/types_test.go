@@ -2,6 +2,8 @@ package test
 
 import (
 	"encoding/json"
+	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -440,10 +442,6 @@ func Test_Parse_Complex128_Unsupported(t *testing.T) {
 	assert.ErrorIs(t, err, yagcl.ErrUnsupportedFieldType)
 }
 
-//FIXME Int
-//FIXME Uint
-//FIXME Float
-
 func Test_Parse_Bool_Valid(t *testing.T) {
 	type configuration struct {
 		A bool `key:"a"`
@@ -477,6 +475,320 @@ func Test_Parse_Bool_Invalid(t *testing.T) {
 			Bytes([]byte(`{
 				"bool": "cheese"
 			}`))).
+		Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+}
+
+func Test_Parse_Int_Valid(t *testing.T) {
+	type configuration struct {
+		Min int `key:"min"`
+		Max int `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": %d,
+				"max": %d
+			}`, math.MinInt, math.MaxInt)))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, math.MinInt, c.Min)
+		assert.Equal(t, math.MaxInt, c.Max)
+	}
+}
+
+func Test_Parse_Int8_Valid(t *testing.T) {
+	type configuration struct {
+		Min int8 `key:"min"`
+		Max int8 `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": %d,
+				"max": %d
+			}`, math.MinInt8, math.MaxInt8)))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, int8(math.MinInt8), c.Min)
+		assert.Equal(t, int8(math.MaxInt8), c.Max)
+	}
+}
+
+func Test_Parse_Int16_Valid(t *testing.T) {
+	type configuration struct {
+		Min int16 `key:"min"`
+		Max int16 `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": %d,
+				"max": %d
+			}`, math.MinInt16, math.MaxInt16)))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, int16(math.MinInt16), c.Min)
+		assert.Equal(t, int16(math.MaxInt16), c.Max)
+	}
+}
+
+func Test_Parse_Int32_Valid(t *testing.T) {
+	type configuration struct {
+		Min int32 `key:"min"`
+		Max int32 `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": %d,
+				"max": %d
+			}`, math.MinInt32, math.MaxInt32)))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, int32(math.MinInt32), c.Min)
+		assert.Equal(t, int32(math.MaxInt32), c.Max)
+	}
+}
+
+func Test_Parse_Int64_Valid(t *testing.T) {
+	type configuration struct {
+		Min int64 `key:"min"`
+		Max int64 `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": %d,
+				"max": %d
+			}`, math.MinInt64, math.MaxInt64)))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, int64(math.MinInt64), c.Min)
+		assert.Equal(t, int64(math.MaxInt64), c.Max)
+	}
+}
+
+func Test_Parse_Uint_Valid(t *testing.T) {
+	type configuration struct {
+		Min uint `key:"min"`
+		Max uint `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": 0,
+				"max": %d
+			}`, uint64(math.MaxUint))))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, uint(0), c.Min)
+		assert.Equal(t, uint(math.MaxUint), c.Max)
+	}
+}
+
+func Test_Parse_Uint8_Valid(t *testing.T) {
+	type configuration struct {
+		Min uint8 `key:"min"`
+		Max uint8 `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": 0,
+				"max": %d
+			}`, uint64(math.MaxUint8))))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, uint8(0), c.Min)
+		assert.Equal(t, uint8(math.MaxUint8), c.Max)
+	}
+}
+
+func Test_Parse_Uint16_Valid(t *testing.T) {
+	type configuration struct {
+		Min uint16 `key:"min"`
+		Max uint16 `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": 0,
+				"max": %d
+			}`, uint64(math.MaxUint16))))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, uint16(0), c.Min)
+		assert.Equal(t, uint16(math.MaxUint16), c.Max)
+	}
+}
+
+func Test_Parse_Uint32_Valid(t *testing.T) {
+	type configuration struct {
+		Min uint32 `key:"min"`
+		Max uint32 `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": 0,
+				"max": %d
+			}`, uint64(math.MaxUint32))))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, uint32(0), c.Min)
+		assert.Equal(t, uint32(math.MaxUint32), c.Max)
+	}
+}
+
+func Test_Parse_Uint64_Valid(t *testing.T) {
+	type configuration struct {
+		Min uint64 `key:"min"`
+		Max uint64 `key:"max"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"min": 0,
+				"max": %d
+			}`, uint64(math.MaxUint64))))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, uint64(0), c.Min)
+		assert.Equal(t, uint64(math.MaxUint64), c.Max)
+	}
+}
+
+func Test_Parse_Float32_Valid(t *testing.T) {
+	type configuration struct {
+		Float float32 `key:"float"`
+	}
+
+	var floatValue float32 = 5.5
+	bytes, _ := json.Marshal(floatValue)
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"float": %s
+			}`, string(bytes))))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, floatValue, c.Float)
+	}
+}
+
+func Test_Parse_Float64_Valid(t *testing.T) {
+	type configuration struct {
+		Float float64 `key:"float"`
+	}
+
+	var floatValue float64 = 5.5
+	bytes, _ := json.Marshal(floatValue)
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(fmt.Sprintf(`{
+				"float": %s
+			}`, string(bytes))))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, floatValue, c.Float)
+	}
+}
+
+func Test_Parse_Float32_Invalid(t *testing.T) {
+	type configuration struct {
+		Float float32 `key:"float"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+				"float": 5.5no float here
+			}`))).
+		Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+}
+
+func Test_Parse_Float64_Invalid(t *testing.T) {
+	type configuration struct {
+		Float float64 `key:"float"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+				"float": 5.5no float here
+			}`))).
+		Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+}
+
+func Test_Parse_Int_Invalid(t *testing.T) {
+	type configuration struct {
+		FieldA int `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+				"field_a": 10no int here
+			}`))).
+		Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+}
+
+func Test_Parse_Uint_Invalid(t *testing.T) {
+	type configuration struct {
+		FieldA uint `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+			"field_a": 10no int here
+		}`))).
 		Parse(&c)
 	assert.ErrorIs(t, err, yagcl.ErrParseValue)
 }
