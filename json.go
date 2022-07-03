@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"reflect"
 	"strings"
@@ -90,28 +91,34 @@ func (s *jsonSourceImpl) Reader(reader io.Reader) JSONSourceOptionalSetup[*jsonS
 // getBytes attempts to retrieve data via one of the defined data sources.
 // A call to jsonSourceImpl.verify should've been done before calling this in
 // order to avoid undefined behaviour.
-func (s *jsonSourceImpl) getBytes() ([]byte, error) {
-	if s.path != "" {
-		fileData, errOpen := os.ReadFile(s.path)
-		if errOpen != nil {
-			if os.IsNotExist(errOpen) {
-				return nil, yagcl.ErrSourceNotFound
-			}
-			return nil, errOpen
-		}
-		return fileData, nil
+func (s *jsonSourceImpl) getBytes() (data []byte, err error) {
+	// Do bytes first, since it saves us the error handling code.
+	if len(s.bytes) > 0 {
+		data = s.bytes
+		return
 	}
 
-	if len(s.bytes) > 0 {
-		return s.bytes, nil
+	// We attempt to check if the source can't be found. While we only do
+	// direct file access in case a path is passed, a reader might also
+	// attempt reading from a file source, therefore we try to check that
+	// error as well.
+	defer func() {
+		if err != nil && os.IsNotExist(err) || errors.Is(err, fs.ErrNotExist) {
+			err = yagcl.ErrSourceNotFound
+		}
+	}()
+
+	if s.path != "" {
+		data, err = os.ReadFile(s.path)
+		return
 	}
 
 	if s.reader != nil {
-		closer, ok := s.reader.(io.Closer)
-		if ok {
+		if closer, ok := s.reader.(io.Closer); ok {
 			defer closer.Close()
 		}
-		return io.ReadAll(s.reader)
+		data, err = io.ReadAll(s.reader)
+		return
 	}
 
 	panic("verification process must have failed, please report this to the maintainer")
