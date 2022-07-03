@@ -49,6 +49,7 @@ type JSONSourceOptionalSetup[T yagcl.Source] interface {
 	// Must declares this source as mandatory, erroring in case no data can
 	// be loaded.
 	// FIXME Clarify when this case happens. Only when not finding a file?
+	// FIXME does must actually make sense for anything but files?
 	Must() T
 }
 

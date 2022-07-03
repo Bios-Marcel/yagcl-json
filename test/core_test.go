@@ -2,6 +2,9 @@ package test
 
 import (
 	"bytes"
+	"errors"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/Bios-Marcel/yagcl"
@@ -49,6 +52,59 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 		assert.False(t, loaded)
 		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
 	}
+}
+
+func Test_Parse_PathSource(t *testing.T) {
+	type configuration struct {
+		FieldA string `key:"field_a"`
+		FieldB string `json:"field_b"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().Add(json.Source().Path("./test.json")).Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content a", c.FieldA)
+		assert.Equal(t, "content b", c.FieldB)
+	}
+}
+
+func Test_Parse_PathSource_NotFound(t *testing.T) {
+	type configuration struct{}
+	var c configuration
+	err := yagcl.New[configuration]().Add(json.Source().Path("./doesntexist.json").Must()).Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrSourceNotFound)
+	err = yagcl.New[configuration]().Add(json.Source().Path("./doesntexist.json")).Parse(&c)
+	assert.NoError(t, err, yagcl.ErrSourceNotFound)
+}
+
+func Test_Parse_ReaderSource(t *testing.T) {
+	type configuration struct {
+		FieldA string `key:"field_a"`
+		FieldB string `json:"field_b"`
+	}
+	var c configuration
+	handle, errOpen := os.OpenFile("./test.json", os.O_RDONLY, os.ModePerm)
+	if assert.NoError(t, errOpen) {
+		err := yagcl.New[configuration]().Add(json.Source().Reader(handle)).Parse(&c)
+		if assert.NoError(t, err) {
+			assert.Equal(t, "content a", c.FieldA)
+			assert.Equal(t, "content b", c.FieldB)
+		}
+	}
+}
+
+type failingReader struct {
+	io.Reader
+}
+
+func (fr failingReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("you shall not ead")
+}
+
+func Test_Parse_ReaderSource_Error(t *testing.T) {
+	type configuration struct{}
+	var c configuration
+	assert.Error(t, yagcl.New[configuration]().Add(json.Source().Reader(&failingReader{}).Must()).Parse(&c))
+	assert.Error(t, yagcl.New[configuration]().Add(json.Source().Reader(&failingReader{})).Parse(&c))
 }
 
 func Test_Parse_KeyTags(t *testing.T) {
