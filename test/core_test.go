@@ -115,5 +115,38 @@ func Test_Parse_UnexportedFieldsIgnored(t *testing.T) {
 	}
 }
 
-//FIXME Does it support comments?
-//FIXME Does it support trailing commas?
+func Test_Parse_TrailingCommas(t *testing.T) {
+	type configuration struct {
+		FieldA string `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().Bytes([]byte(`{
+			"field_a": "content a",
+		}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content a", c.FieldA)
+	}
+}
+
+func Test_Parse_Comments(t *testing.T) {
+	type configuration struct {
+		FieldA string `key:"field_a"`
+		FieldB string `key:"field_b"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().Bytes([]byte(`{
+			"field_a": "content a",
+			//This is a comment
+			"field_b": "content b"
+		}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content a", c.FieldA)
+		assert.Equal(t, "content b", c.FieldB)
+	}
+}
