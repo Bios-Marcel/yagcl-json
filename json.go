@@ -340,11 +340,11 @@ func getUnmarshaler(fieldValue reflect.Value) json.Unmarshaler {
 }
 
 func newUnmarshalError(jsonPath []string, err error) error {
-	return fmt.Errorf("error unmarshalling field '%s': (%s): %w'", jsonPath, err, yagcl.ErrParseValue)
+	return fmt.Errorf("error unmarshalling field '%s': (%s): %w", jsonPath, err, yagcl.ErrParseValue)
 }
 
 func newJsonparserError(jsonPath []string, err error) error {
-	return fmt.Errorf("error accessing json field '%s': (%s): %w'", jsonPath, err, yagcl.ErrParseValue)
+	return fmt.Errorf("error accessing json field '%s': (%s): %w", jsonPath, err, yagcl.ErrParseValue)
 }
 
 func (s *jsonSourceImpl) extractJSONKey(structField reflect.StructField) (string, error) {
