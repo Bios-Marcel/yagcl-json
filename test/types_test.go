@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -829,4 +830,104 @@ func Test_Parse_Uint_Invalid(t *testing.T) {
 		}`))).
 		Parse(&c)
 	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+}
+
+func Test_Parse_StringArray(t *testing.T) {
+	type configuration struct {
+		FieldB []string `json:"field_b"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["content b"]}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, []string{"content b"}, c.FieldB)
+	}
+}
+
+type reverseArray[T any] []T
+
+func (uc *reverseArray[T]) UnmarshalJSON(data []byte) error {
+	target := reflect.Zero(reflect.SliceOf(reflect.TypeOf(uc).Elem().Elem())).Interface().([]T)
+	if err := json.Unmarshal(data, &target); err != nil {
+		return err
+	}
+
+	fmt.Println(string(data), "=", target)
+
+	*uc = reverseArray[T](target)
+	fmt.Println(string(data), "=", *uc)
+	return nil
+}
+
+func Test_Parse_CustomUnmarshallableArray(t *testing.T) {
+	type configuration struct {
+		FieldB reverseArray[string] `json:"field_b"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["a","b","c"]}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, reverseArray[string]{"c", "b", "a"}, c.FieldB)
+	}
+}
+
+func Test_Parse_CustomUnmarshallableArrayItems(t *testing.T) {
+	type configuration struct {
+		FieldB []uppercaser `json:"field_b"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["content b"]}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, []uppercaser{"CONTENT B"}, c.FieldB)
+	}
+}
+
+func Test_Parse_CustomUnmarshallableArrayWithCustomUnmarshallableItems(t *testing.T) {
+	type configuration struct {
+		FieldB reverseArray[uppercaser] `json:"field_b"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["a","b","c"]}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, reverseArray[uppercaser]{"C", "B", "A"}, c.FieldB)
+	}
+}
+
+func Test_Parse_DurationArray(t *testing.T) {
+	//FIXME Parsed as int instead of using the custom unmarshaller
+	t.SkipNow()
+
+	type configuration struct {
+		FieldB []time.Duration `json:"field_b"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["10s"]}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, []time.Duration{10 * time.Second}, c.FieldB)
+	}
+}
+
+func Test_Parse_MixedArray(t *testing.T) {
+	//FIXME Numbers are always parsed as float64. Shall I keep that way?
+	t.SkipNow()
+
+	type configuration struct {
+		FieldB []any `json:"field_b"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["content b", 65]}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		fmt.Printf("%T != %T\n", []any{"content b", 65}[1], c.FieldB[1])
+		assert.Equal(t, []any{"content b", 65}, c.FieldB)
+	}
 }
