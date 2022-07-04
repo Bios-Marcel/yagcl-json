@@ -15,13 +15,13 @@ import (
 	"github.com/buger/jsonparser"
 )
 
-// ErrNoDataSourceSpecified is thrown if none Bytes, Path or Reader of the
-// JSONSourceSetupStepOne interface have been called.
-var ErrNoDataSourceSpecified = errors.New("no data source specified; call Bytes(), Reader() or Path()")
-
-// ErrNoDataSourceSpecified is thrown if more than one of Bytes, Path or Reader
+// ErrNoDataSourceSpecified is thrown if none Bytes, String, Path or Reader
 // of the JSONSourceSetupStepOne interface have been called.
-var ErrMultipleDataSourcesSpecified = errors.New("more than one data source specified; only call one of Bytes(), Reader() or Path()")
+var ErrNoDataSourceSpecified = errors.New("no data source specified; call Bytes(), String(), Reader() or Path()")
+
+// ErrNoDataSourceSpecified is thrown if more than one of Bytes, String, Path
+// or Reader of the JSONSourceSetupStepOne interface have been called.
+var ErrMultipleDataSourcesSpecified = errors.New("more than one data source specified; only call one of Bytes(), String(), Reader() or Path()")
 
 type jsonSourceImpl struct {
 	must   bool
@@ -36,6 +36,8 @@ type jsonSourceImpl struct {
 type JSONSourceSetupStepOne[T yagcl.Source] interface {
 	// Bytes defines a byte array to read from directly.
 	Bytes([]byte) JSONSourceOptionalSetup[T]
+	// Bytes defines a string to read from directly.
+	String(string) JSONSourceOptionalSetup[T]
 	// Path defines a filepath that is accessed when YAGCL.Parse is called.
 	Path(string) JSONSourceOptionalSetup[T]
 	// Reader defines a reader that is accessed when YAGCL.Parse is called. IF
@@ -73,6 +75,12 @@ func (s *jsonSourceImpl) KeyTag() string {
 // Bytes implements JSONSourceSetupStepOne.Bytes.
 func (s *jsonSourceImpl) Bytes(bytes []byte) JSONSourceOptionalSetup[*jsonSourceImpl] {
 	s.bytes = bytes
+	return s
+}
+
+// String implements JSONSourceSetupStepOne.String.
+func (s *jsonSourceImpl) String(str string) JSONSourceOptionalSetup[*jsonSourceImpl] {
+	s.bytes = []byte(str)
 	return s
 }
 
