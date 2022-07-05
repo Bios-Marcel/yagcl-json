@@ -853,10 +853,12 @@ func (uc *reverseArray[T]) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	fmt.Println(string(data), "=", target)
-
+	temp := make(reverseArray[T], len(target))
+	copy(temp, target)
+	for i := 0; i < len(temp); i++ {
+		target[i] = temp[len(temp)-i-1]
+	}
 	*uc = reverseArray[T](target)
-	fmt.Println(string(data), "=", *uc)
 	return nil
 }
 
