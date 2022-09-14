@@ -468,6 +468,8 @@ func Test_CustomTextUnmarshaler_InterfaceCompliance(t *testing.T) {
 }
 
 func Test_Parse_CustomTextUnmarshaler(t *testing.T) {
+	// Extra-Struct for manual json.Unmarshal, as the key tag is without
+	// effect in std/json.
 	type customUnmarshalTest struct {
 		FieldA customTextUnmarshalable `json:"field_a"`
 	}
@@ -497,6 +499,44 @@ func Test_Parse_CustomTextUnmarshaler(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Equal(t, customTextUnmarshalable("LOWER"), c.FieldA)
 	}
+}
+
+func Test_Parse_CustomTextUnmarshaler_Pointers(t *testing.T) {
+	t.Run("single pointer", func(t *testing.T) {
+		type configuration struct {
+			FieldA *customTextUnmarshalable `key:"field_a"`
+		}
+
+		var c configuration
+		err := yagcl.New[configuration]().
+			Add(yagcl_json.
+				Source().
+				Bytes([]byte(`{
+				"field_a": "lower"
+			}`))).
+			Parse(&c)
+		if assert.NoError(t, err) {
+			assert.Equal(t, customTextUnmarshalable("LOWER"), *c.FieldA)
+		}
+	})
+
+	t.Run("multi pointer", func(t *testing.T) {
+		type configuration struct {
+			FieldA ***customTextUnmarshalable `key:"field_a"`
+		}
+
+		var c configuration
+		err := yagcl.New[configuration]().
+			Add(yagcl_json.
+				Source().
+				Bytes([]byte(`{
+				"field_a": "lower"
+			}`))).
+			Parse(&c)
+		if assert.NoError(t, err) {
+			assert.Equal(t, customTextUnmarshalable("LOWER"), ***c.FieldA)
+		}
+	})
 }
 
 func Test_Parse_Complex64_Unsupported(t *testing.T) {
