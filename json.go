@@ -1,6 +1,7 @@
 package json
 
 import (
+	"encoding"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -210,26 +211,57 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 
 		fieldValue := structValue.Field(i)
 		var value any
+
+		// In this section we check whether custom unmarshallers are present.
 		// Types with a custom unmarshaller have to be checked first before
 		// attempting to parse them using default behaviour, as the behaviour
 		// might differ from std/json otherwise.
-		if unmarshallable := getUnmarshaler(fieldValue); unmarshallable != nil {
-			valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
-			if err != nil {
-				return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
-			}
 
-			// Since jsonparser strips the quotes from strings, we need to add
-			// them back in order for custom unmarshalling not to fail.
-			if dataType == jsonparser.String {
-				valueBytes = append(append([]byte(`"`), valueBytes...), byte('"'))
-			}
+		// Technically this check isn't required, as we already filter out
+		// unexported fields. However, I am unsure whether this behaviour is set
+		// in stone, as it hasn't been documented properly.
+		// https://stackoverflow.com/questions/50279840/when-is-go-reflect-caninterface-false
+		var customUnmarshalApplied bool
+		if fieldValue.CanInterface() {
+			valueInterface := reflect.New(fieldValue.Type()).Interface()
+			// New pointer value, since non-pointers can't implement json.Unmarshaler.
+			if u, ok := valueInterface.(json.Unmarshaler); ok {
+				valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
+				if err != nil {
+					return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
+				}
 
-			if err = unmarshallable.UnmarshalJSON(valueBytes); err != nil {
-				return hasAnyFieldBeenSet, newUnmarshalError(jsonPath, err)
+				// Since jsonparser strips the quotes from strings, we need to add
+				// them back in order for custom unmarshalling not to fail.
+				if dataType == jsonparser.String {
+					valueBytes = append(append([]byte(`"`), valueBytes...), byte('"'))
+				}
+
+				if err := u.UnmarshalJSON(valueBytes); err != nil {
+					return hasAnyFieldBeenSet, newUnmarshalError(jsonPath, err)
+				}
+
+				value = u
+				customUnmarshalApplied = true
+			} else if u, ok := valueInterface.(encoding.TextUnmarshaler); ok {
+				valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
+				if err != nil {
+					return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
+				}
+
+				// Only supported for string, as it is "TextUnmarshaler".
+				if dataType == jsonparser.String {
+					if err := u.UnmarshalText(valueBytes); err != nil {
+						return hasAnyFieldBeenSet, newUnmarshalError(jsonPath, err)
+					}
+
+					value = u
+					customUnmarshalApplied = true
+				}
 			}
-			value = unmarshallable
-		} else {
+		}
+
+		if !customUnmarshalApplied {
 			switch fieldType.Kind() {
 			case reflect.String:
 				value, err = jsonparser.GetString(bytes, jsonPath...)
@@ -328,23 +360,6 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 	}
 
 	return hasAnyFieldBeenSet, nil
-}
-
-func getUnmarshaler(fieldValue reflect.Value) json.Unmarshaler {
-	// Technically this check isn't required, as we already filter out
-	// unexported fields. However, I am unsure whether this behaviour is set
-	// in stone, as it hasn't been documented properly.
-	// https://stackoverflow.com/questions/50279840/when-is-go-reflect-caninterface-false
-	if !fieldValue.CanInterface() {
-		return nil
-	}
-
-	// New pointer value, since non-pointers can't implement json.Unmarshaler.
-	if u, ok := reflect.New(fieldValue.Type()).Interface().(json.Unmarshaler); ok {
-		return u
-	}
-
-	return nil
 }
 
 func newUnmarshalError(jsonPath []string, err error) error {
