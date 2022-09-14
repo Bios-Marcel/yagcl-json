@@ -1,6 +1,7 @@
 package test
 
 import (
+	"encoding"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -402,24 +403,29 @@ func Test_Parse_TypeAlias_NoCustomUnmarshal(t *testing.T) {
 	}
 }
 
-type uppercaser string
+type customJSONUnmarshalable string
 
-func (uc *uppercaser) UnmarshalJSON(data []byte) error {
+func (uc *customJSONUnmarshalable) UnmarshalJSON(data []byte) error {
 	var intermediate string
 	if err := json.Unmarshal(data, &intermediate); err != nil {
 		return err
 	}
 
 	if intermediate != "" {
-		*uc = uppercaser(strings.ToUpper(intermediate))
+		*uc = customJSONUnmarshalable(strings.ToUpper(intermediate))
 	}
 
 	return nil
 }
 
-func Test_Parse_CustomUnmarshaler(t *testing.T) {
+func Test_CustomJSONUnmarshaler_InterfaceCompliance(t *testing.T) {
+	var temp = customJSONUnmarshalable("")
+	var _ json.Unmarshaler = &temp
+}
+
+func Test_Parse_CustomJSONUnmarshaler(t *testing.T) {
 	type customUnmarshalTest struct {
-		FieldA uppercaser `json:"field_a"`
+		FieldA customJSONUnmarshalable `json:"field_a"`
 	}
 
 	var customUnmarshalTestValue customUnmarshalTest
@@ -429,11 +435,11 @@ func Test_Parse_CustomUnmarshaler(t *testing.T) {
 				"field_a": "lower"
 			}`),
 			&customUnmarshalTestValue)) {
-		assert.Equal(t, uppercaser("LOWER"), customUnmarshalTestValue.FieldA)
+		assert.Equal(t, customJSONUnmarshalable("LOWER"), customUnmarshalTestValue.FieldA)
 	}
 
 	type configuration struct {
-		FieldA uppercaser `key:"field_a"`
+		FieldA customJSONUnmarshalable `key:"field_a"`
 	}
 
 	var c configuration
@@ -445,7 +451,51 @@ func Test_Parse_CustomUnmarshaler(t *testing.T) {
 			}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
-		assert.Equal(t, uppercaser("LOWER"), c.FieldA)
+		assert.Equal(t, customJSONUnmarshalable("LOWER"), c.FieldA)
+	}
+}
+
+type customTextUnmarshalable string
+
+func (uc *customTextUnmarshalable) UnmarshalText(data []byte) error {
+	*uc = customTextUnmarshalable(strings.ToUpper(string(data)))
+	return nil
+}
+
+func Test_CustomTextUnmarshaler_InterfaceCompliance(t *testing.T) {
+	var temp = customTextUnmarshalable("")
+	var _ encoding.TextUnmarshaler = &temp
+}
+
+func Test_Parse_CustomTextUnmarshaler(t *testing.T) {
+	type customUnmarshalTest struct {
+		FieldA customTextUnmarshalable `json:"field_a"`
+	}
+
+	var customUnmarshalTestValue customUnmarshalTest
+	if assert.NoError(t,
+		json.Unmarshal(
+			[]byte(`{
+				"field_a": "lower"
+			}`),
+			&customUnmarshalTestValue)) {
+		assert.Equal(t, customTextUnmarshalable("LOWER"), customUnmarshalTestValue.FieldA)
+	}
+
+	type configuration struct {
+		FieldA customTextUnmarshalable `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+				"field_a": "lower"
+			}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, customTextUnmarshalable("LOWER"), c.FieldA)
 	}
 }
 
@@ -877,27 +927,27 @@ func Test_Parse_CustomUnmarshallableArray(t *testing.T) {
 
 func Test_Parse_CustomUnmarshallableArrayItems(t *testing.T) {
 	type configuration struct {
-		FieldB []uppercaser `json:"field_b"`
+		FieldB []customJSONUnmarshalable `json:"field_b"`
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
 		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["content b"]}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
-		assert.Equal(t, []uppercaser{"CONTENT B"}, c.FieldB)
+		assert.Equal(t, []customJSONUnmarshalable{"CONTENT B"}, c.FieldB)
 	}
 }
 
 func Test_Parse_CustomUnmarshallableArrayWithCustomUnmarshallableItems(t *testing.T) {
 	type configuration struct {
-		FieldB reverseArray[uppercaser] `json:"field_b"`
+		FieldB reverseArray[customJSONUnmarshalable] `json:"field_b"`
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
 		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["a","b","c"]}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
-		assert.Equal(t, reverseArray[uppercaser]{"C", "B", "A"}, c.FieldB)
+		assert.Equal(t, reverseArray[customJSONUnmarshalable]{"C", "B", "A"}, c.FieldB)
 	}
 }
 
