@@ -223,9 +223,16 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 		// https://stackoverflow.com/questions/50279840/when-is-go-reflect-caninterface-false
 		var customUnmarshalApplied bool
 		if fieldValue.CanInterface() {
-			valueInterface := reflect.New(fieldValue.Type()).Interface()
+			newType := fieldValue.Type()
+			if fieldValue.Kind() == reflect.Pointer {
+				for newType.Kind() == reflect.Pointer {
+					newType = newType.Elem()
+				}
+			}
+
+			parsed := reflect.New(newType)
 			// New pointer value, since non-pointers can't implement json.Unmarshaler.
-			if u, ok := valueInterface.(json.Unmarshaler); ok {
+			if u, ok := parsed.Interface().(json.Unmarshaler); ok {
 				valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
 				if err != nil {
 					return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
@@ -243,7 +250,7 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 
 				value = u
 				customUnmarshalApplied = true
-			} else if u, ok := valueInterface.(encoding.TextUnmarshaler); ok {
+			} else if u, ok := parsed.Interface().(encoding.TextUnmarshaler); ok {
 				valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
 				if err != nil {
 					return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
