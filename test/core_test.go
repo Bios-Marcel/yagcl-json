@@ -36,6 +36,15 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 	}
 
 	stepOne = json.Source()
+	stepOne.String("{}")
+	stepOne.Path("irrelevant.json")
+	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
+		loaded, err := source.Parse(nil)
+		assert.False(t, loaded)
+		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
+	}
+
+	stepOne = json.Source()
 	stepOne.Reader(bytes.NewReader([]byte{1}))
 	stepOne.Path("irrelevant.json")
 	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
@@ -51,6 +60,25 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 		loaded, err := source.Parse(nil)
 		assert.False(t, loaded)
 		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
+	}
+}
+
+func Test_Parse_StringSource(t *testing.T) {
+	type configuration struct {
+		FieldA string `key:"field_a"`
+		FieldB string `json:"field_b"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().Add(json.
+		Source().
+		String(`{
+			"field_a": "content a",
+			"field_b": "content b"
+		}`)).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content a", c.FieldA)
+		assert.Equal(t, "content b", c.FieldB)
 	}
 }
 
