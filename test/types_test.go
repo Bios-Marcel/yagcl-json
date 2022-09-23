@@ -403,6 +403,25 @@ func Test_Parse_TypeAlias_NoCustomUnmarshal(t *testing.T) {
 	}
 }
 
+func Test_Parse_TypeAlias_Pointer_NoCustomUnmarshal(t *testing.T) {
+	type noopstring string
+	type configuration struct {
+		FieldA *noopstring `key:"field_a"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+				"field_a": "lower"
+			}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		result := noopstring("lower")
+		assert.Equal(t, &result, c.FieldA)
+	}
+}
+
 type customJSONUnmarshalable string
 
 func (uc *customJSONUnmarshalable) UnmarshalJSON(data []byte) error {
@@ -1057,4 +1076,8 @@ func Test_Parse_MixedArray(t *testing.T) {
 		fmt.Printf("%T != %T\n", []any{"content b", 65}[1], c.FieldB[1])
 		assert.Equal(t, []any{"content b", 65}, c.FieldB)
 	}
+}
+
+func Test_Parse_StringTypeAlias(t *testing.T) {
+
 }
