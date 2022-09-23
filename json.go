@@ -390,12 +390,12 @@ func (s *jsonSourceImpl) extractJSONKey(structField reflect.StructField) (string
 		jsonKey, tagSet = structField.Tag.Lookup(yagcl.DefaultKeyTagName)
 		if !tagSet {
 			if customKeyTag != "" {
-				return "", fmt.Errorf("neither tag '%s' nor the standard tag '%s' have been set: %w", customKeyTag, yagcl.DefaultKeyTagName, yagcl.ErrExportedFieldMissingKey)
+				return "", fmt.Errorf("neither tag '%s' nor the standard tag '%s' have been set for field '%s': %w", customKeyTag, yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
 			}
 			// Technically dead code right now, but we'll leave it in, as I am
 			// unsure how the API will develop. Maybe overriding of keys should
 			// be allowed to prevent clashing with other libraries?
-			return "", fmt.Errorf("standard tag '%s' has not been set: %w", yagcl.DefaultKeyTagName, yagcl.ErrExportedFieldMissingKey)
+			return "", fmt.Errorf("standard tag '%s' has not been set for field '%s': %w", yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
 		}
 		// FIXME TODO
 		// jsonKey = s.keyValueConverter(envKey)
