@@ -19,7 +19,7 @@ func Test_JSONSource_InterfaceCompliance(t *testing.T) {
 func Test_JSONSource_ErrNoSource(t *testing.T) {
 	source, ok := json.Source().(yagcl.Source)
 	if assert.True(t, ok) {
-		loaded, err := source.Parse(nil)
+		loaded, err := source.Parse(nil, nil)
 		assert.False(t, loaded)
 		assert.ErrorIs(t, err, json.ErrNoDataSourceSpecified)
 	}
@@ -30,7 +30,7 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 	stepOne.Bytes([]byte{1})
 	stepOne.Path("irrelevant.json")
 	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
-		loaded, err := source.Parse(nil)
+		loaded, err := source.Parse(nil, nil)
 		assert.False(t, loaded)
 		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
 	}
@@ -39,7 +39,7 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 	stepOne.String("{}")
 	stepOne.Path("irrelevant.json")
 	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
-		loaded, err := source.Parse(nil)
+		loaded, err := source.Parse(nil, nil)
 		assert.False(t, loaded)
 		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
 	}
@@ -48,7 +48,7 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 	stepOne.Reader(bytes.NewReader([]byte{1}))
 	stepOne.Path("irrelevant.json")
 	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
-		loaded, err := source.Parse(nil)
+		loaded, err := source.Parse(nil, nil)
 		assert.False(t, loaded)
 		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
 	}
@@ -57,7 +57,7 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 	stepOne.Reader(bytes.NewReader([]byte{1}))
 	stepOne.Bytes([]byte{1})
 	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
-		loaded, err := source.Parse(nil)
+		loaded, err := source.Parse(nil, nil)
 		assert.False(t, loaded)
 		assert.ErrorIs(t, err, json.ErrMultipleDataSourcesSpecified)
 	}

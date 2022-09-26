@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"os"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/Bios-Marcel/yagcl"
@@ -158,7 +157,7 @@ func (s *jsonSourceImpl) verify() error {
 }
 
 // Parse implements Source.Parse.
-func (s *jsonSourceImpl) Parse(configurationStruct any) (bool, error) {
+func (s *jsonSourceImpl) Parse(parsingCompanion yagcl.ParsingCompanion, configurationStruct any) (bool, error) {
 	if err := s.verify(); err != nil {
 		return false, err
 	}
@@ -171,22 +170,22 @@ func (s *jsonSourceImpl) Parse(configurationStruct any) (bool, error) {
 		return false, err
 	}
 
-	_, err = s.parse(bytes, nil, reflect.Indirect(reflect.ValueOf(configurationStruct)))
+	_, err = s.parse(parsingCompanion, bytes, nil, reflect.Indirect(reflect.ValueOf(configurationStruct)))
 	return err == nil, err
 }
 
-func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValue reflect.Value) (bool, error) {
+func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []byte, parentJsonPath []string, structValue reflect.Value) (bool, error) {
 	var hasAnyFieldBeenSet bool
 	structType := structValue.Type()
 	for i := 0; i < structValue.NumField(); i++ {
 		structField := structType.Field(i)
 		// By default, all exported fiels are not ignored and all exported
 		// fields are. Unexported fields can't be un-ignored though.
-		if !structField.IsExported() || strings.EqualFold(structField.Tag.Get("ignore"), "true") {
+		if !parsingCompanion.IncludeField(structField) {
 			continue
 		}
 
-		jsonKey, err := s.extractJSONKey(structField)
+		jsonKey, err := s.extractJSONKey(parsingCompanion, structField)
 		if err != nil {
 			return hasAnyFieldBeenSet, err
 		}
@@ -286,7 +285,7 @@ func (s *jsonSourceImpl) parse(bytes []byte, parentJsonPath []string, structValu
 				}
 				structValue = reflect.Indirect(structValue)
 
-				hasAnySubStructFieldBeenSet, err := s.parse(bytes, jsonPath, structValue)
+				hasAnySubStructFieldBeenSet, err := s.parse(parsingCompanion, bytes, jsonPath, structValue)
 				hasAnyFieldBeenSet = hasAnyFieldBeenSet || hasAnySubStructFieldBeenSet
 				if err != nil {
 					return hasAnyFieldBeenSet, err
@@ -377,28 +376,27 @@ func newJsonparserError(jsonPath []string, err error) error {
 	return fmt.Errorf("error accessing json field '%s': (%s): %w", jsonPath, err, yagcl.ErrParseValue)
 }
 
-func (s *jsonSourceImpl) extractJSONKey(structField reflect.StructField) (string, error) {
-	var (
-		jsonKey string
-		tagSet  bool
-	)
-	customKeyTag := s.KeyTag()
-	if customKeyTag != "" {
-		jsonKey, tagSet = structField.Tag.Lookup(customKeyTag)
-	}
-	if !tagSet {
-		jsonKey, tagSet = structField.Tag.Lookup(yagcl.DefaultKeyTagName)
-		if !tagSet {
-			if customKeyTag != "" {
-				return "", fmt.Errorf("neither tag '%s' nor the standard tag '%s' have been set for field '%s': %w", customKeyTag, yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
-			}
-			// Technically dead code right now, but we'll leave it in, as I am
-			// unsure how the API will develop. Maybe overriding of keys should
-			// be allowed to prevent clashing with other libraries?
-			return "", fmt.Errorf("standard tag '%s' has not been set for field '%s': %w", yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
+func (s *jsonSourceImpl) extractJSONKey(parsingCompanion yagcl.ParsingCompanion, structField reflect.StructField) (string, error) {
+	// Custom tag
+	if s.KeyTag() != "" {
+		key := structField.Tag.Get(s.KeyTag())
+		if key != "" {
+			return key, nil
 		}
-		// FIXME TODO
-		// jsonKey = s.keyValueConverter(envKey)
 	}
-	return jsonKey, nil
+
+	// Fallback tag
+	if key := parsingCompanion.ExtractFieldKey(structField); key != "" {
+		// FIXME keyValueConverter?
+		return key, nil
+	}
+
+	// No tag found
+	if s.KeyTag() != "" {
+		return "", fmt.Errorf("neither tag '%s' nor the standard tag '%s' have been set for field '%s': %w", s.KeyTag(), yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
+	}
+	// Technically dead code right now, but we'll leave it in, as I am
+	// unsure how the API will develop. Maybe overriding of keys should
+	// be allowed to prevent clashing with other libraries?
+	return "", fmt.Errorf("standard tag '%s' has not been set for field '%s': %w", yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
 }
