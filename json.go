@@ -204,11 +204,7 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 			return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
 		}
 
-		fieldType := structField.Type
-		for fieldType.Kind() == reflect.Pointer {
-			fieldType = fieldType.Elem()
-		}
-
+		fieldType := extractNonPointerFieldType(structField.Type)
 		fieldValue := structValue.Field(i)
 		var value any
 
@@ -223,13 +219,7 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 		// https://stackoverflow.com/questions/50279840/when-is-go-reflect-caninterface-false
 		var customUnmarshalApplied bool
 		if fieldValue.CanInterface() {
-			newType := fieldValue.Type()
-			if fieldValue.Kind() == reflect.Pointer {
-				for newType.Kind() == reflect.Pointer {
-					newType = newType.Elem()
-				}
-			}
-
+			newType := extractNonPointerFieldType(fieldValue.Type())
 			parsed := reflect.New(newType)
 			// New pointer value, since non-pointers can't implement json.Unmarshaler.
 			if u, ok := parsed.Interface().(json.Unmarshaler); ok {
@@ -396,8 +386,17 @@ func (s *jsonSourceImpl) extractJSONKey(parsingCompanion yagcl.ParsingCompanion,
 	if s.KeyTag() != "" {
 		return "", fmt.Errorf("neither tag '%s' nor the standard tag '%s' have been set for field '%s': %w", s.KeyTag(), yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
 	}
+
 	// Technically dead code right now, but we'll leave it in, as I am
 	// unsure how the API will develop. Maybe overriding of keys should
 	// be allowed to prevent clashing with other libraries?
 	return "", fmt.Errorf("standard tag '%s' has not been set for field '%s': %w", yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
+}
+
+func extractNonPointerFieldType(fieldType reflect.Type) reflect.Type {
+	if fieldType.Kind() != reflect.Pointer {
+		return fieldType
+	}
+
+	return extractNonPointerFieldType(fieldType.Elem())
 }
