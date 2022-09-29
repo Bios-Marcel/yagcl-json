@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/Bios-Marcel/yagcl"
@@ -381,7 +382,7 @@ func (s *jsonSourceImpl) extractJSONKey(parsingCompanion yagcl.ParsingCompanion,
 	if s.KeyTag() != "" {
 		key := structField.Tag.Get(s.KeyTag())
 		if key != "" {
-			return key, nil
+			return strings.Split(key, ",")[0], nil
 		}
 	}
 

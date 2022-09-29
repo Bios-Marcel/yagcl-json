@@ -163,6 +163,22 @@ func Test_Parse_KeyTags(t *testing.T) {
 	}
 }
 
+func Test_Parse_KeyTags_ExtraValues(t *testing.T) {
+	type configuration struct {
+		FieldB string `json:"field_b,omitempty"`
+	}
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(json.Source().
+			Bytes([]byte(`{
+				"field_b": "content b"
+			}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "content b", c.FieldB)
+	}
+}
+
 func Test_Parse_MissingJSONField(t *testing.T) {
 	type configuration struct {
 		FieldA string `key:"field_a"`
