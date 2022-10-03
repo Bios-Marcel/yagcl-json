@@ -179,6 +179,10 @@ func Test_Parse_KeyTags_ExtraValues(t *testing.T) {
 	}
 }
 
+func Test_Parse_KeyTag_NonEmpty(t *testing.T) {
+	assert.NotEmpty(t, json.Source().String(`{}`).KeyTag())
+}
+
 func Test_Parse_MissingJSONField(t *testing.T) {
 	type configuration struct {
 		FieldA string `key:"field_a"`

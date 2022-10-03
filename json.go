@@ -369,11 +369,9 @@ func newJsonparserError(jsonPath []string, err error) error {
 
 func (s *jsonSourceImpl) extractJSONKey(parsingCompanion yagcl.ParsingCompanion, structField reflect.StructField) (string, error) {
 	// Custom tag
-	if s.KeyTag() != "" {
-		key := structField.Tag.Get(s.KeyTag())
-		if key != "" {
-			return strings.Split(key, ",")[0], nil
-		}
+	key := structField.Tag.Get(s.KeyTag())
+	if key != "" {
+		return strings.Split(key, ",")[0], nil
 	}
 
 	// Fallback tag
@@ -383,14 +381,7 @@ func (s *jsonSourceImpl) extractJSONKey(parsingCompanion yagcl.ParsingCompanion,
 	}
 
 	// No tag found
-	if s.KeyTag() != "" {
-		return "", fmt.Errorf("neither tag '%s' nor the standard tag '%s' have been set for field '%s': %w", s.KeyTag(), yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
-	}
-
-	// Technically dead code right now, but we'll leave it in, as I am
-	// unsure how the API will develop. Maybe overriding of keys should
-	// be allowed to prevent clashing with other libraries?
-	return "", fmt.Errorf("standard tag '%s' has not been set for field '%s': %w", yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
+	return "", fmt.Errorf("neither tag '%s' nor the standard tag '%s' have been set for field '%s': %w", s.KeyTag(), yagcl.DefaultKeyTagName, structField.Name, yagcl.ErrExportedFieldMissingKey)
 }
 
 func extractNonPointerFieldType(fieldType reflect.Type) reflect.Type {
