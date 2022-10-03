@@ -192,15 +192,13 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 		}
 		jsonPath := append(parentJsonPath, jsonKey)
 
-		// We check this beforehand so we can keep the field type specific
-		// code simple and not litter it with `if err == not exists` checks.
-		if _, _, _, err = jsonparser.Get(bytes, jsonPath...); err != nil {
-			// Since required fields are checked after doing source specific
-			// parsing, we ignore that here.
-			if err == jsonparser.KeyPathNotFoundError {
-				continue
-			}
-
+		valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
+		// Since not every field in the struct might be in the JSON, we
+		// ignore these "errors".
+		if err == jsonparser.KeyPathNotFoundError {
+			continue
+		}
+		if err != nil {
 			return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
 		}
 
@@ -220,17 +218,15 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 		var customUnmarshalApplied bool
 		if fieldValue.CanInterface() {
 			newType := extractNonPointerFieldType(fieldValue.Type())
-			parsed := reflect.New(newType)
 			// New pointer value, since non-pointers can't implement json.Unmarshaler.
+			parsed := reflect.New(newType)
 			if u, ok := parsed.Interface().(json.Unmarshaler); ok {
-				valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
-				if err != nil {
-					return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
-				}
-
 				// Since jsonparser strips the quotes from strings, we need to add
 				// them back in order for custom unmarshalling not to fail.
 				if dataType == jsonparser.String {
+					// This means that strings might still contain escape sequences.
+					// The implementation of UnmarshalJSON has to treat this.
+					// FIXME See if this behaviour is the same in standard go json.
 					valueBytes = append(append([]byte(`"`), valueBytes...), byte('"'))
 				}
 
@@ -241,11 +237,6 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 				value = u
 				customUnmarshalApplied = true
 			} else if u, ok := parsed.Interface().(encoding.TextUnmarshaler); ok {
-				valueBytes, dataType, _, err := jsonparser.Get(bytes, jsonPath...)
-				if err != nil {
-					return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
-				}
-
 				// Only supported for string, as it is "TextUnmarshaler".
 				if dataType == jsonparser.String {
 					if err := u.UnmarshalText(valueBytes); err != nil {
@@ -261,7 +252,12 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 		if !customUnmarshalApplied {
 			switch fieldType.Kind() {
 			case reflect.String:
-				value, err = jsonparser.GetString(bytes, jsonPath...)
+				if dataType != jsonparser.String {
+					return hasAnyFieldBeenSet, fmt.Errorf("field '%s' had an incorrect JSON type (%s != string): %w", structField.Name, dataType.String(), yagcl.ErrParseValue)
+				}
+				// Can't use the raw value, as there might be escape sequences.
+				// This is basically what jsonparser.GetString does.
+				value, err = jsonparser.ParseString(valueBytes)
 				if err != nil {
 					return hasAnyFieldBeenSet, newJsonparserError(jsonPath, err)
 				}

@@ -20,12 +20,25 @@ func Test_Parse_JSON_String(t *testing.T) {
 	type configuration struct {
 		FieldB string `json:"field_b"`
 	}
-	var c configuration
-	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": "content b"}`))).
-		Parse(&c)
-	if assert.NoError(t, err) {
-		assert.Equal(t, "content b", c.FieldB)
+
+	for _, value := range [][2]string{
+		{`{"field_b": ""}`, ""},
+		{`{"field_b": "a"}`, "a"},
+		{`{"field_b": "ab"}`, "ab"},
+		{`{"field_b": "content b"}`, "content b"},
+		{`{"field_b": "New\nLine"}`, "New\nLine"},
+		{`{"field_b": "\"quoted\""}`, "\"quoted\""},
+		{`{"field_b": "still \"quoted\", init?"}`, "still \"quoted\", init?"},
+	} {
+		t.Run(value[0], func(t *testing.T) {
+			var c configuration
+			err := yagcl.New[configuration]().
+				Add(yagcl_json.Source().String(value[0])).
+				Parse(&c)
+			if assert.NoError(t, err) {
+				assert.Equal(t, value[1], c.FieldB)
+			}
+		})
 	}
 }
 
@@ -33,11 +46,24 @@ func Test_Parse_JSON_String_Invalid(t *testing.T) {
 	type configuration struct {
 		FieldB string `json:"field_b"`
 	}
-	var c configuration
-	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": text}`))).
-		Parse(&c)
-	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+
+	for _, value := range []string{
+		`{"field_b": text}`,
+		`{"field_b": t}`,
+		`{"field_b": te}`,
+		`{"field_b": 2}`,
+		`{"field_b": 22}`,
+		// Invalid escape sequence.
+		`{"field_b": "\z"}`,
+	} {
+		t.Run(value, func(t *testing.T) {
+			var c configuration
+			err := yagcl.New[configuration]().
+				Add(yagcl_json.Source().String(value)).
+				Parse(&c)
+			assert.ErrorIs(t, err, yagcl.ErrParseValue)
+		})
+	}
 }
 
 func Test_Parse_Duration(t *testing.T) {
