@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -519,6 +520,68 @@ func Test_Parse_CustomJSONUnmarshaler(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Equal(t, customJSONUnmarshalable("LOWER"), c.FieldA)
 	}
+}
+
+type intCustomJSONUnmarshalable int64
+
+func (uc *intCustomJSONUnmarshalable) UnmarshalJSON(data []byte) error {
+	i, err := strconv.ParseInt(string(data), 10, 64)
+	if err != nil {
+		return err
+	}
+	*uc = intCustomJSONUnmarshalable(i)
+	return nil
+}
+
+func (uc intCustomJSONUnmarshalable) String() string {
+	return fmt.Sprintf("%d", uc)
+}
+
+func Test_Parse_CustomJSONUnmarshaler_Unparsable(t *testing.T) {
+	type configuration struct {
+		FieldA intCustomJSONUnmarshalable `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+				"field_a": "notanint"
+			}`))).
+		Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+}
+
+type intCustomTextUnmarshalable int64
+
+func (uc *intCustomTextUnmarshalable) UnmarshalText(data []byte) error {
+	i, err := strconv.ParseInt(string(data), 10, 64)
+	if err != nil {
+		return err
+	}
+	*uc = intCustomTextUnmarshalable(i)
+	return nil
+}
+
+func (uc intCustomTextUnmarshalable) String() string {
+	return fmt.Sprintf("%d", uc)
+}
+
+func Test_Parse_CustomTextUnmarshaler_Unparsable(t *testing.T) {
+	type configuration struct {
+		FieldA intCustomTextUnmarshalable `key:"field_a"`
+	}
+
+	var c configuration
+	err := yagcl.New[configuration]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+				"field_a": "notanint"
+			}`))).
+		Parse(&c)
+	assert.ErrorIs(t, err, yagcl.ErrParseValue)
 }
 
 func Test_Parse_CustomJSONUnmarshaler_Pointers(t *testing.T) {
