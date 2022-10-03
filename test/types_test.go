@@ -71,12 +71,19 @@ func Test_Parse_Duration(t *testing.T) {
 		FieldA time.Duration `key:"field_a"`
 	}
 
-	var c configuration
-	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_a": "10s"}`))).
-		Parse(&c)
-	if assert.NoError(t, err) {
-		assert.Equal(t, time.Second*10, c.FieldA)
+	for _, value := range []string{
+		`{"field_a": "10s"}`,
+		`{"field_a": 10000000000}`,
+	} {
+		t.Run(value, func(t *testing.T) {
+			var c configuration
+			err := yagcl.New[configuration]().
+				Add(yagcl_json.Source().String(value)).
+				Parse(&c)
+			if assert.NoError(t, err) {
+				assert.Equal(t, time.Second*10, c.FieldA)
+			}
+		})
 	}
 }
 
@@ -85,11 +92,19 @@ func Test_Parse_Duration_Invalid(t *testing.T) {
 		FieldA time.Duration `key:"field_a"`
 	}
 
-	var c configuration
-	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_a": "ain't valid"}`))).
-		Parse(&c)
-	assert.ErrorIs(t, err, yagcl.ErrParseValue)
+	for _, value := range []string{
+		`{"field_a": "ain't valid"}`,
+		`{"field_a": err`,
+		`{"field_a": true`,
+	} {
+		t.Run(value, func(t *testing.T) {
+			var c configuration
+			err := yagcl.New[configuration]().
+				Add(yagcl_json.Source().String(value)).
+				Parse(&c)
+			assert.ErrorIs(t, err, yagcl.ErrParseValue)
+		})
+	}
 }
 
 func Test_Parse_JSON_Nested(t *testing.T) {

@@ -296,20 +296,22 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 				}
 			case reflect.Int64:
 				{
-					if stringValue, err := jsonparser.GetString(bytes, jsonPath...); err == nil {
-						// Since there are no constants for alias / struct types, we have
-						// to an additional check with custom parsing, since durations
-						// also contain a duration unit, such as "s" for seconds.
-						if fieldType.AssignableTo(reflect.TypeOf(time.Duration(0))) {
-							var errParse error
-							value, errParse = time.ParseDuration(stringValue)
-							if errParse != nil {
-								return hasAnyFieldBeenSet, fmt.Errorf("value '%s' isn't parsable as an 'time.Duration' for field '%s': %w", stringValue, structField.Name, yagcl.ErrParseValue)
-							}
+					if dataType == jsonparser.String {
+						if stringValue, err := jsonparser.ParseString(valueBytes); err == nil {
+							// Since there are no constants for alias / struct types, we have
+							// to an additional check with custom parsing, since durations
+							// also contain a duration unit, such as "s" for seconds.
+							if fieldType.AssignableTo(reflect.TypeOf(time.Duration(0))) {
+								var errParse error
+								value, errParse = time.ParseDuration(stringValue)
+								if errParse != nil {
+									return hasAnyFieldBeenSet, fmt.Errorf("value '%s' isn't parsable as an 'time.Duration' for field '%s': %w", stringValue, structField.Name, yagcl.ErrParseValue)
+								}
 
-							value = reflect.ValueOf(value).Convert(fieldType).Interface()
-							// Parse successful, default path not needed.
-							break
+								value = reflect.ValueOf(value).Convert(fieldType).Interface()
+								// Parse successful, default path not needed.
+								break
+							}
 						}
 					}
 				}
@@ -319,9 +321,6 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 				fallthrough
 			default:
 				{
-					// We are ignoring the error, since we did the same .Get call
-					// earlier already and know it should succeed.
-					valueBytes, _, _, _ := jsonparser.Get(bytes, jsonPath...)
 					value = reflect.New(fieldType).Interface()
 					err = json.Unmarshal(valueBytes, &value)
 					if err != nil {
