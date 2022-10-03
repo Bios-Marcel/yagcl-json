@@ -109,8 +109,6 @@ func Test_Parse_Duration_Invalid(t *testing.T) {
 
 func Test_Parse_JSON_Nested(t *testing.T) {
 	type configuration struct {
-		//Not yet implemented
-		//FieldA string `key:"field_a"`
 		FieldA struct {
 			FieldB string `json:"field_b"`
 		} `json:"field_a"`
@@ -125,8 +123,6 @@ func Test_Parse_JSON_Nested(t *testing.T) {
 			}`)).Must()).
 		Parse(&c)
 	if assert.NoError(t, err) {
-		//Not yet implemented
-		//assert.Equal(t, "content a", c.FieldA)
 		assert.Equal(t, "content b", c.FieldA.FieldB)
 	}
 }
