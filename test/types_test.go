@@ -1266,23 +1266,31 @@ func Test_Parse_CustomUnmarshallableArrayWithCustomUnmarshallableItems(t *testin
 	}
 }
 
-func Test_Parse_DurationArray(t *testing.T) {
-	//FIXME Parsed as int instead of using the custom unmarshaller
+func Test_Parse_DurationSlice(t *testing.T) {
+	// Currently broken. See https://github.com/Bios-Marcel/yagcl/issues/10
 	t.SkipNow()
 
 	type configuration struct {
 		FieldB []time.Duration `json:"field_b"`
 	}
-	var c configuration
-	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["10s"]}`))).
-		Parse(&c)
-	if assert.NoError(t, err) {
-		assert.Equal(t, []time.Duration{10 * time.Second}, c.FieldB)
+
+	for _, value := range []string{
+		`{"field_b": ["10s"]}`,
+		`{"field_b": [1000000000]}`,
+	} {
+		t.Run(value, func(t *testing.T) {
+			var c configuration
+			err := yagcl.New[configuration]().
+				Add(yagcl_json.Source().String(value)).
+				Parse(&c)
+			if assert.NoError(t, err) {
+				assert.Equal(t, []time.Duration{10 * time.Second}, c.FieldB)
+			}
+		})
 	}
 }
 
-func Test_Parse_MixedArray(t *testing.T) {
+func Test_Parse_MixedSlice(t *testing.T) {
 	//FIXME Numbers are always parsed as float64. Shall I keep that way?
 	t.SkipNow()
 
