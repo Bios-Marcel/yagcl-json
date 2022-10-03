@@ -272,6 +272,80 @@ func Test_Parse_SinglePointerToStruct_Invalid(t *testing.T) {
 	assert.ErrorIs(t, err, yagcl.ErrParseValue)
 }
 
+func Test_Parse_Struct_PreserveDefaults(t *testing.T) {
+	type evenDeeper struct {
+		Field string `key:"field"`
+	}
+	type nested struct {
+		Field      string     `key:"field"`
+		EvenDeeper evenDeeper `key:"even_deeper"`
+	}
+	type config struct {
+		Field  string `key:"field"`
+		Nested nested `key:"nested"`
+	}
+
+	c := config{
+		Field: "default",
+		Nested: nested{
+			Field: "default",
+		},
+	}
+	err := yagcl.New[config]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+			"nested": {
+				"even_deeper": {
+					"field": "set"
+				}
+			}
+		}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "default", c.Field)
+		assert.Equal(t, "default", c.Nested.Field)
+		assert.Equal(t, "set", c.Nested.EvenDeeper.Field)
+	}
+}
+
+func Test_Parse_StructPointers_PreserveDefaults(t *testing.T) {
+	type evenDeeper struct {
+		Field string `key:"field"`
+	}
+	type nested struct {
+		Field      string      `key:"field"`
+		EvenDeeper *evenDeeper `key:"even_deeper"`
+	}
+	type config struct {
+		Field  string  `key:"field"`
+		Nested *nested `key:"nested"`
+	}
+
+	c := config{
+		Field: "default",
+		Nested: &nested{
+			Field: "default",
+		},
+	}
+	err := yagcl.New[config]().
+		Add(yagcl_json.
+			Source().
+			Bytes([]byte(`{
+		"nested": {
+			"even_deeper": {
+				"field": "set"
+			}
+		}
+	}`))).
+		Parse(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "default", c.Field)
+		assert.Equal(t, "default", c.Nested.Field)
+		assert.Equal(t, "set", c.Nested.EvenDeeper.Field)
+	}
+}
+
 func Test_Parse_Struct_Invalid(t *testing.T) {
 	type substruct struct {
 		FieldC int `key:"field_c"`
