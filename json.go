@@ -130,7 +130,9 @@ func (s *jsonSourceImpl) getBytes() (data []byte, err error) {
 		return
 	}
 
-	panic("verification process must have failed, please report this to the maintainer")
+	// This should be dead code and therefore isn't covered by a test either.
+	err = errors.New("verification process must have failed, please report this to the maintainer")
+	return
 }
 
 // verify checks whether the source has been configured correctly. We attempt
