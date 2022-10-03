@@ -63,6 +63,16 @@ func Test_JSONSource_MultipleSources(t *testing.T) {
 	}
 }
 
+func Test_Parse_Source_IsDirectory(t *testing.T) {
+	stepOne := json.Source()
+	stepOne.Path("./")
+	if source, ok := stepOne.(yagcl.Source); assert.True(t, ok) {
+		loaded, err := source.Parse(nil, nil)
+		assert.False(t, loaded)
+		assert.Error(t, err)
+	}
+}
+
 func Test_Parse_StringSource(t *testing.T) {
 	type configuration struct {
 		FieldA string `key:"field_a"`
