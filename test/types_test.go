@@ -597,7 +597,7 @@ func (uc *customJSONUnmarshalable) UnmarshalJSON(data []byte) error {
 }
 
 func Test_CustomJSONUnmarshaler(t *testing.T) {
-	var temp = customJSONUnmarshalable("")
+	temp := customJSONUnmarshalable("")
 	var _ json.Unmarshaler = &temp
 
 	type customUnmarshalTest struct {
@@ -740,7 +740,7 @@ func (uc *customTextUnmarshalable) UnmarshalText(data []byte) error {
 }
 
 func Test_CustomTextUnmarshaler(t *testing.T) {
-	var temp = customTextUnmarshalable("")
+	temp := customTextUnmarshalable("")
 	var _ encoding.TextUnmarshaler = &temp
 
 	type customUnmarshalTest struct {
@@ -1291,7 +1291,7 @@ func Test_Parse_DurationSlice(t *testing.T) {
 }
 
 func Test_Parse_MixedSlice(t *testing.T) {
-	//FIXME Numbers are always parsed as float64. Shall I keep that way?
+	// FIXME Numbers are always parsed as float64. Shall I keep that way?
 	t.SkipNow()
 
 	type configuration struct {
@@ -1305,4 +1305,94 @@ func Test_Parse_MixedSlice(t *testing.T) {
 		fmt.Printf("%T != %T\n", []any{"content b", 65}[1], c.FieldB[1])
 		assert.Equal(t, []any{"content b", 65}, c.FieldB)
 	}
+}
+
+// Test_Parse_EmptyStruct is a regression test. A panic occurred when parsing
+// a struct with no fields or fields of which none had been set while parsing.
+func Test_Parse_EmptyStruct(t *testing.T) {
+	t.Run("no fields", func(t *testing.T) {
+		type nested struct{}
+		type Config struct {
+			Nested nested `key:"nested"`
+		}
+
+		c := Config{}
+		err := yagcl.New[Config]().
+			Add(yagcl_json.Source().String(`{"nested": {}}`)).
+			Parse(&c)
+		assert.NoError(t, err)
+	})
+	t.Run("no fields were set", func(t *testing.T) {
+		type nested struct {
+			Field string `key:"field"`
+		}
+		type Config struct {
+			Nested nested `key:"nested"`
+		}
+
+		c := Config{}
+		err := yagcl.New[Config]().
+			Add(yagcl_json.Source().String(`{"nested": {}}`)).
+			Parse(&c)
+		assert.NoError(t, err)
+	})
+	t.Run("no fields were set, since none matched", func(t *testing.T) {
+		type nested struct {
+			Field string `key:"field"`
+		}
+		type Config struct {
+			Nested nested `key:"nested"`
+		}
+
+		c := Config{}
+		err := yagcl.New[Config]().
+			Add(yagcl_json.Source().String(`{"nested": {"other_field": "value"}}`)).
+			Parse(&c)
+		assert.NoError(t, err)
+	})
+}
+
+// Test_Parse_EmptyStruct is a regression test. A panic occurred when parsing
+// a struct with no fields or fields of which none had been set while parsing.
+func Test_Parse_EmptyStructPointer(t *testing.T) {
+	t.Run("no fields", func(t *testing.T) {
+		type nested struct{}
+		type Config struct {
+			Nested *nested `key:"nested"`
+		}
+
+		c := Config{}
+		err := yagcl.New[Config]().
+			Add(yagcl_json.Source().String(`{"nested": {}}`)).
+			Parse(&c)
+		assert.NoError(t, err)
+	})
+	t.Run("no fields were set", func(t *testing.T) {
+		type nested struct {
+			Field string `key:"field"`
+		}
+		type Config struct {
+			Nested *nested `key:"nested"`
+		}
+
+		c := Config{}
+		err := yagcl.New[Config]().
+			Add(yagcl_json.Source().String(`{"nested": {}}`)).
+			Parse(&c)
+		assert.NoError(t, err)
+	})
+	t.Run("no fields were set, since none matched", func(t *testing.T) {
+		type nested struct {
+			Field string `key:"field"`
+		}
+		type Config struct {
+			Nested *nested `key:"nested"`
+		}
+
+		c := Config{}
+		err := yagcl.New[Config]().
+			Add(yagcl_json.Source().String(`{"nested": {"other_field": "value"}}`)).
+			Parse(&c)
+		assert.NoError(t, err)
+	})
 }

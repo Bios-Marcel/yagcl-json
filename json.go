@@ -283,11 +283,15 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 				// Only if any field of our temporary struct has been set, we
 				// actually use the initialised struct for its parent.
 				// Otherwise we'd initialise struct pointers that don't have a
-				// single field set, losing the information of what values ha
-				// actually been set.
-				if hasAnySubStructFieldBeenSet {
-					value = structValue.Interface()
+				// single field set, losing the information of what values have
+				// actually been set. Additionally, executing the rest of the
+				// loop would cause a panic, as we'd try to access the value
+				// that hasn't been initiliased.
+				if !hasAnySubStructFieldBeenSet {
+					continue
 				}
+
+				value = structValue.Interface()
 			case reflect.Complex64, reflect.Complex128:
 				{
 					// Complex isn't supported, as for example it also isn't supported
@@ -334,7 +338,7 @@ func (s *jsonSourceImpl) parse(parsingCompanion yagcl.ParsingCompanion, bytes []
 		// Make sure that we have neither a pointer, not type aliased type that is incorrect.
 		parsed := reflect.Indirect(reflect.ValueOf(value)).Convert(fieldType)
 		if fieldValue.Kind() == reflect.Pointer {
-			//Create as many values as we have pointers pointing to things.
+			// Create as many values as we have pointers pointing to things.
 			var pointers []reflect.Value
 			lastPointer := reflect.New(fieldValue.Type().Elem())
 			pointers = append(pointers, lastPointer)
