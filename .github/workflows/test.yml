@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         platform: [windows-latest, ubuntu-latest, macos-latest]
-        go: ['1.18.x']
+        go: ["1.18.x"]
 
     runs-on: ${{ matrix.platform }}
 
@@ -22,4 +22,4 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          go test -v -race -covermode=atomic -coverpkg ./ ./test
+          go test -v -race -covermode=atomic .

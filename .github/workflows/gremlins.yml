@@ -1,0 +1,20 @@
+name: Mutation Testing
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+
+jobs:
+  gremlins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+      - name: Run Mutation Tests (via gremlin)
+        uses: go-gremlins/gremlins-action@v1
+        with:
+          version: latest

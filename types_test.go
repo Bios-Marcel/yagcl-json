@@ -1,4 +1,4 @@
-package test
+package yagcl_json
 
 import (
 	"encoding"
@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/Bios-Marcel/yagcl"
-	yagcl_json "github.com/Bios-Marcel/yagcl-json"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +32,7 @@ func Test_Parse_JSON_String(t *testing.T) {
 		t.Run(value[0], func(t *testing.T) {
 			var c configuration
 			err := yagcl.New[configuration]().
-				Add(yagcl_json.Source().String(value[0])).
+				Add(Source().String(value[0])).
 				Parse(&c)
 			if assert.NoError(t, err) {
 				assert.Equal(t, value[1], c.FieldB)
@@ -59,7 +58,7 @@ func Test_Parse_JSON_String_Invalid(t *testing.T) {
 		t.Run(value, func(t *testing.T) {
 			var c configuration
 			err := yagcl.New[configuration]().
-				Add(yagcl_json.Source().String(value)).
+				Add(Source().String(value)).
 				Parse(&c)
 			assert.ErrorIs(t, err, yagcl.ErrParseValue)
 		})
@@ -78,7 +77,7 @@ func Test_Parse_Duration(t *testing.T) {
 		t.Run(value, func(t *testing.T) {
 			var c configuration
 			err := yagcl.New[configuration]().
-				Add(yagcl_json.Source().String(value)).
+				Add(Source().String(value)).
 				Parse(&c)
 			if assert.NoError(t, err) {
 				assert.Equal(t, time.Second*10, c.FieldA)
@@ -100,7 +99,7 @@ func Test_Parse_Duration_Invalid(t *testing.T) {
 		t.Run(value, func(t *testing.T) {
 			var c configuration
 			err := yagcl.New[configuration]().
-				Add(yagcl_json.Source().String(value)).
+				Add(Source().String(value)).
 				Parse(&c)
 			assert.ErrorIs(t, err, yagcl.ErrParseValue)
 		})
@@ -115,7 +114,7 @@ func Test_Parse_JSON_Nested(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().
+		Add(Source().
 			Bytes([]byte(`{
 				"field_a": {
 					"field_b": "content b"
@@ -144,7 +143,7 @@ func Test_Parse_DeeplyNested(t *testing.T) {
 	}
 
 	var c configuration
-	err := yagcl.New[configuration]().Add(yagcl_json.Source().
+	err := yagcl.New[configuration]().Add(Source().
 		Bytes([]byte(`
 			{
 				"field_a": "content a",
@@ -175,9 +174,9 @@ func Test_Parse_SimplePointer(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": 10
 			}`))).
 		Parse(&c)
@@ -193,9 +192,9 @@ func Test_Parse_DoublePointer(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": 10
 			}`))).
 		Parse(&c)
@@ -211,9 +210,9 @@ func Test_Parse_PointerOfDoom(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": 10
 			}`))).
 		Parse(&c)
@@ -234,9 +233,9 @@ func Test_Parse_SinglePointerToStruct(t *testing.T) {
 	var c configuration
 	c.FieldB = &substruct{}
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "content a",
 				"field_b": {
 					"field_c": "content c"
@@ -260,9 +259,9 @@ func Test_Parse_SinglePointerToStruct_Invalid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 			"field_a": "content a",
 			"field_b": {
 				"field_c": "no integer here"
@@ -292,9 +291,9 @@ func Test_Parse_Struct_PreserveDefaults(t *testing.T) {
 		},
 	}
 	err := yagcl.New[config]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 			"nested": {
 				"even_deeper": {
 					"field": "set"
@@ -329,9 +328,9 @@ func Test_Parse_StructPointers_PreserveDefaults(t *testing.T) {
 		},
 	}
 	err := yagcl.New[config]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 		"nested": {
 			"even_deeper": {
 				"field": "set"
@@ -357,9 +356,9 @@ func Test_Parse_Struct_Invalid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 			"field_a": "content a",
 			"field_b": {
 				"field_c": "no integer here"
@@ -382,9 +381,9 @@ func Test_Parse_SingleNilPointerToStruct(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 			"field_a": "content a",
 			"field_b": {
 				"field_c": 1
@@ -398,9 +397,9 @@ func Test_Parse_SingleNilPointerToStruct(t *testing.T) {
 
 	c = configuration{}
 	err = yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 			"field_a": "content a",
 		}`))).
 		Parse(&c)
@@ -420,9 +419,9 @@ func Test_Parse_PointerOfDoomToStruct(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 			"field_a": "content a",
 			"field_b": {
 				"field_c": "content c"
@@ -436,9 +435,9 @@ func Test_Parse_PointerOfDoomToStruct(t *testing.T) {
 
 	c = configuration{}
 	err = yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 			"field_a": "content a",
 		}`))).
 		Parse(&c)
@@ -461,7 +460,7 @@ func Test_Parse_NestedPointerOfDoomToStruct(t *testing.T) {
 	}
 
 	var c configuration
-	err := yagcl.New[configuration]().Add(yagcl_json.Source().
+	err := yagcl.New[configuration]().Add(Source().
 		Bytes([]byte(`
 			{
 				"field_a": "content a",
@@ -484,7 +483,7 @@ func Test_Parse_NestedPointerOfDoomToStruct(t *testing.T) {
 	}
 
 	c = configuration{}
-	err = yagcl.New[configuration]().Add(yagcl_json.Source().
+	err = yagcl.New[configuration]().Add(Source().
 		Bytes([]byte(`
 			{
 				"field_a": "content a",
@@ -504,9 +503,9 @@ func Test_Parse_TypeAlias_NoCustomUnmarshal(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "lower"
 			}`))).
 		Parse(&c)
@@ -522,9 +521,9 @@ func Test_Parse_TypeAlias_Pointer_NoCustomUnmarshal(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "lower"
 			}`))).
 		Parse(&c)
@@ -544,9 +543,9 @@ func Test_Parse_TypeAlias_CustomStructType(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": {
 					"value": "lower"
 				}
@@ -567,9 +566,9 @@ func Test_Parse_TypeAlias_Pointer_CustomStructType(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": {
 					"value": "lower"
 				}
@@ -622,9 +621,9 @@ func Test_Parse_CustomJSONUnmarshaler(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "lower"
 			}`))).
 		Parse(&c)
@@ -655,9 +654,9 @@ func Test_Parse_CustomJSONUnmarshaler_Unparsable(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "notanint"
 			}`))).
 		Parse(&c)
@@ -686,9 +685,9 @@ func Test_Parse_CustomTextUnmarshaler_Unparsable(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "notanint"
 			}`))).
 		Parse(&c)
@@ -703,9 +702,9 @@ func Test_Parse_CustomJSONUnmarshaler_Pointers(t *testing.T) {
 
 		var c configuration
 		err := yagcl.New[configuration]().
-			Add(yagcl_json.
+			Add(
 				Source().
-				Bytes([]byte(`{
+					Bytes([]byte(`{
 					"field_a": "lower"
 				}`))).
 			Parse(&c)
@@ -720,9 +719,9 @@ func Test_Parse_CustomJSONUnmarshaler_Pointers(t *testing.T) {
 
 		var c configuration
 		err := yagcl.New[configuration]().
-			Add(yagcl_json.
+			Add(
 				Source().
-				Bytes([]byte(`{
+					Bytes([]byte(`{
 					"field_a": "lower"
 				}`))).
 			Parse(&c)
@@ -765,9 +764,9 @@ func Test_Parse_CustomTextUnmarshaler(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "lower"
 			}`))).
 		Parse(&c)
@@ -784,9 +783,9 @@ func Test_Parse_CustomTextUnmarshaler_Pointers(t *testing.T) {
 
 		var c configuration
 		err := yagcl.New[configuration]().
-			Add(yagcl_json.
+			Add(
 				Source().
-				Bytes([]byte(`{
+					Bytes([]byte(`{
 				"field_a": "lower"
 			}`))).
 			Parse(&c)
@@ -802,9 +801,9 @@ func Test_Parse_CustomTextUnmarshaler_Pointers(t *testing.T) {
 
 		var c configuration
 		err := yagcl.New[configuration]().
-			Add(yagcl_json.
+			Add(
 				Source().
-				Bytes([]byte(`{
+					Bytes([]byte(`{
 				"field_a": "lower"
 			}`))).
 			Parse(&c)
@@ -821,9 +820,9 @@ func Test_Parse_Complex64_Unsupported(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "irrelevant"
 			}`))).
 		Parse(&c)
@@ -837,9 +836,9 @@ func Test_Parse_Complex128_Unsupported(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": "irrelevant"
 			}`))).
 		Parse(&c)
@@ -854,9 +853,9 @@ func Test_Parse_Bool_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"a": true,
 				"b": false
 			}`))).
@@ -874,9 +873,9 @@ func Test_Parse_Bool_Invalid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"bool": "cheese"
 			}`))).
 		Parse(&c)
@@ -891,9 +890,9 @@ func Test_Parse_Int_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": %d,
 				"max": %d
 			}`, math.MinInt, math.MaxInt)))).
@@ -912,9 +911,9 @@ func Test_Parse_Int8_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": %d,
 				"max": %d
 			}`, math.MinInt8, math.MaxInt8)))).
@@ -933,9 +932,9 @@ func Test_Parse_Int16_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": %d,
 				"max": %d
 			}`, math.MinInt16, math.MaxInt16)))).
@@ -954,9 +953,9 @@ func Test_Parse_Int32_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": %d,
 				"max": %d
 			}`, math.MinInt32, math.MaxInt32)))).
@@ -975,9 +974,9 @@ func Test_Parse_Int64_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": %d,
 				"max": %d
 			}`, math.MinInt64, math.MaxInt64)))).
@@ -996,9 +995,9 @@ func Test_Parse_Uint_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": 0,
 				"max": %d
 			}`, uint64(math.MaxUint))))).
@@ -1017,9 +1016,9 @@ func Test_Parse_Uint8_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": 0,
 				"max": %d
 			}`, uint64(math.MaxUint8))))).
@@ -1038,9 +1037,9 @@ func Test_Parse_Uint16_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": 0,
 				"max": %d
 			}`, uint64(math.MaxUint16))))).
@@ -1059,9 +1058,9 @@ func Test_Parse_Uint32_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": 0,
 				"max": %d
 			}`, uint64(math.MaxUint32))))).
@@ -1080,9 +1079,9 @@ func Test_Parse_Uint64_Valid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"min": 0,
 				"max": %d
 			}`, uint64(math.MaxUint64))))).
@@ -1102,9 +1101,9 @@ func Test_Parse_Float32_Valid(t *testing.T) {
 	bytes, _ := json.Marshal(floatValue)
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"float": %s
 			}`, string(bytes))))).
 		Parse(&c)
@@ -1122,9 +1121,9 @@ func Test_Parse_Float64_Valid(t *testing.T) {
 	bytes, _ := json.Marshal(floatValue)
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(fmt.Sprintf(`{
+				Bytes([]byte(fmt.Sprintf(`{
 				"float": %s
 			}`, string(bytes))))).
 		Parse(&c)
@@ -1140,9 +1139,9 @@ func Test_Parse_Float32_Invalid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"float": 5.5no float here
 			}`))).
 		Parse(&c)
@@ -1156,9 +1155,9 @@ func Test_Parse_Float64_Invalid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"float": 5.5no float here
 			}`))).
 		Parse(&c)
@@ -1172,9 +1171,9 @@ func Test_Parse_Int_Invalid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 				"field_a": 10no int here
 			}`))).
 		Parse(&c)
@@ -1188,9 +1187,9 @@ func Test_Parse_Uint_Invalid(t *testing.T) {
 
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.
+		Add(
 			Source().
-			Bytes([]byte(`{
+				Bytes([]byte(`{
 			"field_a": 10no int here
 		}`))).
 		Parse(&c)
@@ -1203,7 +1202,7 @@ func Test_Parse_StringArray(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["content b"]}`))).
+		Add(Source().Bytes([]byte(`{"field_b": ["content b"]}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
 		assert.Equal(t, []string{"content b"}, c.FieldB)
@@ -1233,7 +1232,7 @@ func Test_Parse_CustomUnmarshallableArray(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["a","b","c"]}`))).
+		Add(Source().Bytes([]byte(`{"field_b": ["a","b","c"]}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
 		assert.Equal(t, reverseArray[string]{"c", "b", "a"}, c.FieldB)
@@ -1246,7 +1245,7 @@ func Test_Parse_CustomUnmarshallableArrayItems(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["content b"]}`))).
+		Add(Source().Bytes([]byte(`{"field_b": ["content b"]}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
 		assert.Equal(t, []customJSONUnmarshalable{"CONTENT B"}, c.FieldB)
@@ -1259,7 +1258,7 @@ func Test_Parse_CustomUnmarshallableArrayWithCustomUnmarshallableItems(t *testin
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["a","b","c"]}`))).
+		Add(Source().Bytes([]byte(`{"field_b": ["a","b","c"]}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
 		assert.Equal(t, reverseArray[customJSONUnmarshalable]{"C", "B", "A"}, c.FieldB)
@@ -1281,7 +1280,7 @@ func Test_Parse_DurationSlice(t *testing.T) {
 		t.Run(value, func(t *testing.T) {
 			var c configuration
 			err := yagcl.New[configuration]().
-				Add(yagcl_json.Source().String(value)).
+				Add(Source().String(value)).
 				Parse(&c)
 			if assert.NoError(t, err) {
 				assert.Equal(t, []time.Duration{10 * time.Second}, c.FieldB)
@@ -1299,7 +1298,7 @@ func Test_Parse_MixedSlice(t *testing.T) {
 	}
 	var c configuration
 	err := yagcl.New[configuration]().
-		Add(yagcl_json.Source().Bytes([]byte(`{"field_b": ["content b", 65]}`))).
+		Add(Source().Bytes([]byte(`{"field_b": ["content b", 65]}`))).
 		Parse(&c)
 	if assert.NoError(t, err) {
 		fmt.Printf("%T != %T\n", []any{"content b", 65}[1], c.FieldB[1])
@@ -1318,7 +1317,7 @@ func Test_Parse_EmptyStruct(t *testing.T) {
 
 		c := Config{}
 		err := yagcl.New[Config]().
-			Add(yagcl_json.Source().String(`{"nested": {}}`)).
+			Add(Source().String(`{"nested": {}}`)).
 			Parse(&c)
 		assert.NoError(t, err)
 	})
@@ -1332,7 +1331,7 @@ func Test_Parse_EmptyStruct(t *testing.T) {
 
 		c := Config{}
 		err := yagcl.New[Config]().
-			Add(yagcl_json.Source().String(`{"nested": {}}`)).
+			Add(Source().String(`{"nested": {}}`)).
 			Parse(&c)
 		assert.NoError(t, err)
 	})
@@ -1346,7 +1345,7 @@ func Test_Parse_EmptyStruct(t *testing.T) {
 
 		c := Config{}
 		err := yagcl.New[Config]().
-			Add(yagcl_json.Source().String(`{"nested": {"other_field": "value"}}`)).
+			Add(Source().String(`{"nested": {"other_field": "value"}}`)).
 			Parse(&c)
 		assert.NoError(t, err)
 	})
@@ -1363,13 +1362,13 @@ func Test_Parse_EmptyStructPointer(t *testing.T) {
 
 		c := Config{}
 		err := yagcl.New[Config]().
-			Add(yagcl_json.Source().String(`{"nested": {}}`)).
+			Add(Source().String(`{"nested": {}}`)).
 			Parse(&c)
 		assert.NoError(t, err)
 	})
 	t.Run("no fields were set", func(t *testing.T) {
 		type nested struct {
-			Field string `key:"field"`
+			Field string `key:"fields"`
 		}
 		type Config struct {
 			Nested *nested `key:"nested"`
@@ -1377,7 +1376,7 @@ func Test_Parse_EmptyStructPointer(t *testing.T) {
 
 		c := Config{}
 		err := yagcl.New[Config]().
-			Add(yagcl_json.Source().String(`{"nested": {}}`)).
+			Add(Source().String(`{"nested": {}}`)).
 			Parse(&c)
 		assert.NoError(t, err)
 	})
@@ -1391,7 +1390,7 @@ func Test_Parse_EmptyStructPointer(t *testing.T) {
 
 		c := Config{}
 		err := yagcl.New[Config]().
-			Add(yagcl_json.Source().String(`{"nested": {"other_field": "value"}}`)).
+			Add(Source().String(`{"nested": {"other_field": "value"}}`)).
 			Parse(&c)
 		assert.NoError(t, err)
 	})

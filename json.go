@@ -1,4 +1,4 @@
-package json
+package yagcl_json
 
 import (
 	"encoding"
